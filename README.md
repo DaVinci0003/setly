@@ -4,7 +4,7 @@ Kişisel günlük antrenman planı. Koyu lacivert/siyah zemin, turkuaz vurgular 
 
 ## Özellikler
 - Hareket arama ve kategori filtreleri: vücut ağırlığı, dumbbell, barbell, kardiyo ve makineler.
-- Set ve set başına tekrar hedefi belirleme.
+- Düzenli set/tekrar hedefi belirleme veya serbest set modunda toplam tekrar hedefi koyma (ör. 100 barfiks). Serbest modda her `+` kaydı yeni boş set alanı açar ve toplam ilerleme görünür.
 - Her set için tekrar sayısını girip `+` ile kaydetme; ayrıca set kutucuğunu tikleyerek tamamlama.
 - Koşu/yürüyüş gibi kardiyo hareketlerinde kilometre veya dakika hedefi ve tamamlandı seçeneği.
 - Hareketi sabitleme: sabitlenen hareketler diğer günlerin planına taşınır; sabitlenmeyen hareketler yalnızca eklendiği günde kalır.
