@@ -1,8 +1,9 @@
+```json
 {
   "id": "/setly/",
   "name": "Setly — Antrenman Takibi",
   "short_name": "Setly",
-  "description": "Günlük antrenmanlarını planla, setlerini kaydet ve gelişimini takip et.",
+  "description": "Günlük antrenmanlarını planla ve takip et.",
   "start_url": "/setly/",
   "scope": "/setly/",
   "display": "standalone",
@@ -31,3 +32,4 @@
     }
   ]
 }
+```
