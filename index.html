@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b1015">
+  <meta name="description" content="Günlük antrenmanlarını planla, setlerini kaydet ve gelişimini takip et.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <title>Setly — Antrenman Takibi</title>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">S</div>
+        <div><div class="brand-name">SETLY</div><div class="brand-sub">ANTRENMAN TAKİBİ</div></div>
+      </div>
+      <div class="date-controls">
+        <button class="icon-btn" id="prevDay" aria-label="Önceki gün">←</button>
+        <input type="date" id="selectedDate" aria-label="Antrenman tarihi">
+        <button class="icon-btn" id="nextDay" aria-label="Sonraki gün">→</button>
+        <button class="today-btn" id="todayBtn">Bugün</button>
+      </div>
+    </header>
+
+    <main>
+      <div class="welcome-row">
+        <div>
+          <h1>Bugün kendin için ne yaptın?</h1>
+          <p>Bir tekrar, bir set, bir adım daha. Ritmini kur.</p>
+        </div>
+        <button class="primary-btn add-main" id="openAdd">＋ Alıştırma ekle</button>
+      </div>
+
+      <section class="stats-grid" aria-label="Günlük özet">
+        <article class="stat-card">
+          <div class="stat-label">GÜNLÜK İLERLEME</div>
+          <div class="stat-value accent" id="progressValue">0%</div>
+          <div class="stat-caption" id="progressCaption">Başlamak için ilk hareketini ekle.</div>
+          <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+        </article>
+        <article class="stat-card">
+          <div class="stat-label">TAMAMLANAN HAREKET</div>
+          <div class="stat-value" id="completedValue">0 <span class="small-unit">/ 0</span></div>
+          <div class="stat-caption">Bugünkü planındaki hareketler</div>
+        </article>
+        <article class="stat-card">
+          <div class="stat-label">TOPLAM TEKRAR</div>
+          <div class="stat-value" id="repsValue">0</div>
+          <div class="stat-caption">Bugün kaydettiğin tekrar</div>
+        </article>
+        <article class="stat-card">
+          <div class="stat-label">SABİT HAREKETLER</div>
+          <div class="stat-value" id="pinnedValue">0</div>
+          <div class="stat-caption">Her gün planında kalır</div>
+        </article>
+      </section>
+
+      <div class="content-grid">
+        <section class="panel workout-panel">
+          <div class="panel-heading">
+            <div>
+              <h2>▦ GÜNLÜK ANTRENMAN</h2>
+              <p>Setlerini işaretle veya yaptığın tekrar sayısını kaydet.</p>
+            </div>
+            <div class="legend"><span class="legend-dot"></span> Kaydedilenler otomatik saklanır</div>
+          </div>
+          <div id="workoutList" class="workout-list"></div>
+          <div class="empty-state" id="emptyState">
+            <div class="empty-icon">＋</div>
+            <h3>Bugünün planını oluştur</h3>
+            <p>Şınav, barfiks, squat, koşu… İstediğin hareketleri ekle ve kendi programını kur.</p>
+            <button class="primary-btn" id="emptyAdd">İlk hareketini ekle</button>
+          </div>
+          <div class="finish-wrap" id="finishWrap" hidden>
+            <button class="finish-btn" id="finishBtn">✓ Antrenmanı tamamla</button>
+            <div class="finish-note" id="finishNote">Bittiğinde gününü tamamlandı olarak işaretle.</div>
+          </div>
+        </section>
+
+        <aside class="side-column">
+          <section class="panel">
+            <div class="panel-heading compact">
+              <div><h2>HAREKET DAĞILIMI</h2><p>Son 30 gündeki tamamlama oranların</p></div>
+            </div>
+            <div id="distribution" class="distribution"></div>
+            <div id="distributionEmpty" class="muted-empty">Veri biriktikçe en sık yaptığın hareketleri burada göreceksin.</div>
+          </section>
+          <section class="panel">
+            <div class="panel-heading compact">
+              <div><h2>SON GÜNLER</h2><p>Yakın zamandaki antrenman durumun</p></div>
+            </div>
+            <div class="week-strip" id="weekStrip"></div>
+            <div class="mini-summary"><span>Son 7 gün</span><strong id="weekSummary">0 gün tamamlandı</strong></div>
+          </section>
+          <section class="tip-card">
+            <div class="tip-icon">✦</div>
+            <div><strong>Küçük adımlar, büyük gelişim.</strong><p>Hareketleri sabitleyerek yarınki planında da tutabilirsin.</p></div>
+          </section>
+        </aside>
+      </div>
+      <footer>SETLY <span>•</span> Verilerin bu cihazda saklanır.</footer>
+    </main>
+  </div>
+
+  <dialog id="addDialog" class="modal">
+    <form method="dialog" class="modal-card" id="addForm">
+      <div class="modal-head">
+        <div><div class="eyebrow">PLANINI KİŞİSELLEŞTİR</div><h2>Alıştırma ekle</h2></div>
+        <button class="close-btn" value="cancel" aria-label="Kapat">×</button>
+      </div>
+      <label class="search-wrap"><span>⌕</span><input id="exerciseSearch" type="search" placeholder="Hareket ara: şınav, dumbbell, koşu…" autocomplete="off"></label>
+      <div class="category-row" id="categoryRow">
+        <button type="button" class="category-chip active" data-category="Tümü">Tümü</button>
+        <button type="button" class="category-chip" data-category="Vücut ağırlığı">Vücut ağırlığı</button>
+        <button type="button" class="category-chip" data-category="Dumbbell">Dumbbell</button>
+        <button type="button" class="category-chip" data-category="Barbell">Barbell</button>
+        <button type="button" class="category-chip" data-category="Kardiyo">Kardiyo</button>
+        <button type="button" class="category-chip" data-category="Makine">Makine</button>
+      </div>
+      <div class="exercise-results" id="exerciseResults"></div>
+      <div class="custom-exercise">
+        <label for="customName">Listede yok mu? Kendi hareketini ekle</label>
+        <div class="custom-row"><input id="customName" placeholder="Hareket adı"><button type="button" class="secondary-btn" id="addCustom">＋ Ekle</button></div>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="configDialog" class="modal">
+    <form method="dialog" class="modal-card config-card" id="configForm">
+      <div class="modal-head">
+        <div><div class="eyebrow">HAREKET AYARLARI</div><h2 id="configTitle">Hareket ekle</h2></div>
+        <button class="close-btn" value="cancel" aria-label="Kapat">×</button>
+      </div>
+      <p class="config-description" id="configDescription">Hedefini belirle.</p>
+      <div class="field-grid" id="strengthFields">
+        <label>Set sayısı<input id="setCount" type="number" min="1" max="30" value="3" required></label>
+        <label>Set başına tekrar<input id="repCount" type="number" min="1" max="1000" value="10" required></label>
+      </div>
+      <div class="field-grid" id="cardioFields" hidden>
+        <label>Mesafe (km)<input id="distanceCount" type="number" min="0.1" max="999" step="0.1" value="4"></label>
+        <label>Tür<select id="cardioType"><option value="km">Kilometre</option><option value="dk">Dakika</option></select></label>
+      </div>
+      <label class="pin-option"><input id="pinOnAdd" type="checkbox" checked> <span><strong>Her gün planımda kalsın</strong><small>Sabitlemezsen yalnızca bu gün için eklenir.</small></span></label>
+      <div class="modal-actions"><button type="button" class="secondary-btn" id="cancelConfig">Vazgeç</button><button type="button" class="primary-btn" id="confirmAdd">Plana ekle</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="editDialog" class="modal">
+    <form method="dialog" class="modal-card config-card">
+      <div class="modal-head"><div><div class="eyebrow">HAREKETİ DÜZENLE</div><h2 id="editTitle">Düzenle</h2></div><button class="close-btn" value="cancel" aria-label="Kapat">×</button></div>
+      <label class="edit-label">Hareket adı<input id="editName"></label>
+      <div class="field-grid" id="editStrengthFields"><label>Set sayısı<input id="editSets" type="number" min="1" max="30"></label><label>Set başına tekrar<input id="editReps" type="number" min="1" max="1000"></label></div>
+      <div class="field-grid" id="editCardioFields" hidden><label>Mesafe / süre hedefi<input id="editDistance" type="number" min="0.1" step="0.1"></label><label>Tür<select id="editCardioType"><option value="km">Kilometre</option><option value="dk">Dakika</option></select></label></div>
+      <div class="modal-actions"><button type="button" class="secondary-btn" id="deleteExercise">Sil</button><button type="button" class="primary-btn" id="saveEdit">Değişiklikleri kaydet</button></div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status"></div>
+  <script src="app.js"></script>
+</body>
+</html>

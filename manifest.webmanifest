@@ -1,0 +1,19 @@
+{
+  "name": "Setly — Antrenman Takibi",
+  "short_name": "Setly",
+  "description": "Günlük antrenmanlarını planla ve takip et.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0b1015",
+  "theme_color": "#0b1015",
+  "icons": [
+    {
+      "src": "assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
