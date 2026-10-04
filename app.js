@@ -356,8 +356,14 @@
   }
   // Daily plans are snapshots. Only pinned exercises are carried into another date.
   ensurePinnedDay(selectedDate);
-  if("serviceWorker" in navigator && location.protocol!=="file:"){
-    window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+  if ("serviceWorker" in navigator && location.protocol !== "file:") {
+    window.addEventListener("load", () => {
+      const swUrl = new URL("./sw.js", location.href);
+      const appScope = new URL("./", location.href).pathname;
+      navigator.serviceWorker.register(swUrl.href, { scope: appScope }).catch(() => {
+        // The app remains usable online even if offline support cannot be registered.
+      });
+    });
   }
   render();
 })();
