@@ -29,9 +29,9 @@
   function loadState(){
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if(raw){const parsed=JSON.parse(raw); if(parsed && parsed.days && parsed.pinned) return parsed;}
+      if(raw){const parsed=JSON.parse(raw); if(parsed && parsed.days && parsed.pinned) { if(!Array.isArray(parsed.savedGroups)) parsed.savedGroups=[]; return parsed; }}
     } catch(e) {}
-    return {days:{},pinned:[],completedDays:{}};
+    return {days:{},pinned:[],completedDays:{},savedGroups:[]};
   }
   function save(){ localStorage.setItem(STORAGE_KEY,JSON.stringify(state)); }
   function dayList(date=selectedDate){ return state.days[date] || []; }
@@ -197,7 +197,7 @@
       if(locked)card.querySelectorAll("button,input").forEach(control=>control.disabled=true);
       $("workoutList").appendChild(card);
     });
-    renderStats();renderDistribution();renderWeek();
+    renderStats();renderDistribution();renderWeek();renderSavedGroups();
     const p=progress();
     const finishedToday=dayLocked();
     $("finishBtn").disabled=finishedToday||p<100;
@@ -205,6 +205,59 @@
     $("finishBtn").textContent=finishedToday?"✓ Bugün tamamlandı":"✓ Antrenmanı tamamla";
     $("finishNote").textContent=finishedToday?"Tebrikler! Bugünün planı kilitlendi.":p===100?"Harika! Bugünkü planını tamamladın.":"Tüm setleri ve hareketleri tamamladığında günü bitirebilirsin.";
     $("finishNote").classList.toggle("success",finishedToday||p===100);
+  }
+  let editingGroupId = null;
+  function groupExerciseSnapshot(e){
+    const out={name:e.name,category:e.category||"Kişisel",icon:e.icon||"🏋️",type:e.type||"strength",pinned:false};
+    if(out.type==="cardio"){out.target=Number(e.target)||4;out.unit=e.unit||"km";}
+    else if(e.mode==="flex"){out.mode="flex";out.targetReps=Number(e.targetReps)||100;}
+    else{out.mode="fixed";out.sets=Number(e.sets)||3;out.reps=Number(e.reps)||10;}
+    return out;
+  }
+  function renderSavedGroups(){
+    const root=$("savedGroupsList"); if(!root)return;
+    const groups=state.savedGroups||[]; root.innerHTML="";
+    if(!groups.length){root.innerHTML='<div class="saved-empty">Henüz kayıtlı program yok. Günlük planını oluşturup <strong>Grubu kaydet</strong> düğmesine bas.</div>';return;}
+    groups.forEach(g=>{
+      const card=document.createElement("article");card.className="saved-group-card";
+      const summary=(g.exercises||[]).map(e=>`${safeText(e.name)} · ${e.type==="cardio"?`${e.target} ${e.unit==="dk"?"dk":"km"}`:e.mode==="flex"?`serbest · hedef ${e.targetReps}`:`${e.sets}×${e.reps}`}`).join(" <span>•</span> ");
+      card.innerHTML=`<div class="saved-group-copy"><strong>${safeText(g.name)}</strong><div class="saved-group-meta">${(g.exercises||[]).length} hareket</div><div class="saved-group-summary">${summary}</div></div><div class="saved-group-actions"><button type="button" class="tiny-btn" data-group-action="load">Yükle</button><button type="button" class="tiny-btn" data-group-action="edit">Düzenle</button><button type="button" class="tiny-btn remove-btn" data-group-action="delete">Sil</button></div>`;
+      card.querySelector('[data-group-action="load"]').addEventListener("click",()=>loadSavedGroup(g.id));
+      card.querySelector('[data-group-action="edit"]').addEventListener("click",()=>openGroupDialog(g));
+      card.querySelector('[data-group-action="delete"]').addEventListener("click",()=>{if(!confirm(`“${g.name}” kayıtlı grubunu silmek istiyor musun?`))return;state.savedGroups=state.savedGroups.filter(x=>x.id!==g.id);save();renderSavedGroups();showToast("Kayıtlı grup silindi.");});
+      root.appendChild(card);
+    });
+  }
+  function openGroupDialog(group=null){
+    if(!dayList().length && !group){showToast("Önce günlük plana en az bir hareket ekle.");return;}
+    editingGroupId=group?.id||null;
+    $("groupDialogTitle").textContent=group?"Grubu düzenle":"Antrenmanı kaydet";
+    $("groupName").value=group?.name||"";
+    const exercises=group?.exercises||dayList().map(groupExerciseSnapshot);
+    $("groupPreview").innerHTML=exercises.length?exercises.map((e,i)=>`<div class="group-preview-row edit-group-row"><div class="group-exercise-label"><span>${safeText(e.icon||"🏋️")} ${safeText(e.name)}</span><small>${e.type==="cardio"?"Kardiyo":e.mode==="flex"?"Serbest tekrar":"Düzenli set"}</small></div>${group?`<div class="group-edit-fields">${e.type==="cardio"?`<label>Hedef<input data-group-index="${i}" data-field="target" type="number" min="0.1" step="0.1" value="${Number(e.target)||4}"></label><label>Birim<select data-group-index="${i}" data-field="unit"><option value="km" ${e.unit!=="dk"?"selected":""}>km</option><option value="dk" ${e.unit==="dk"?"selected":""}>dk</option></select></label>`:e.mode==="flex"?`<label>Toplam hedef<input data-group-index="${i}" data-field="targetReps" type="number" min="1" value="${Number(e.targetReps)||100}"></label>`:`<label>Set<input data-group-index="${i}" data-field="sets" type="number" min="1" max="30" value="${Number(e.sets)||3}"></label><label>Tekrar<input data-group-index="${i}" data-field="reps" type="number" min="1" max="1000" value="${Number(e.reps)||10}"></label>`}</div>`:`<small>${e.type==="cardio"?`${e.target} ${e.unit==="dk"?"dk":"km"}`:e.mode==="flex"?`Serbest · ${e.targetReps} tekrar hedef`:`${e.sets} set × ${e.reps} tekrar`}</small>`}</div>`).join(""):'<p class="saved-empty">Bu grupta henüz hareket yok.</p>';
+    $("groupDialog").showModal();
+  }
+  function saveWorkoutGroup(){
+    const name=$("groupName").value.trim(); if(!name){showToast("Gruba bir isim ver.");$("groupName").focus();return;}
+    let exercises=editingGroupId?(state.savedGroups.find(g=>g.id===editingGroupId)?.exercises||[]):dayList().map(groupExerciseSnapshot);
+    if(!exercises.length){showToast("Kaydedilecek hareket bulunamadı.");return;}
+    if(editingGroupId){
+      exercises=exercises.map((e,i)=>{const updated={...e};$("groupPreview").querySelectorAll(`[data-group-index="${i}"]`).forEach(input=>{const field=input.dataset.field;if(field==="unit")updated.unit=input.value;else if(field==="sets")updated.sets=Math.max(1,Math.min(30,Number(input.value)||1));else if(field==="reps")updated.reps=Math.max(1,Math.min(1000,Number(input.value)||1));else if(field==="targetReps")updated.targetReps=Math.max(1,Math.min(100000,Number(input.value)||100));else if(field==="target")updated.target=Math.max(.1,Number(input.value)||1);});return updated;});
+      const g=state.savedGroups.find(x=>x.id===editingGroupId);if(g){g.name=name;g.exercises=exercises;}
+    }
+    else{state.savedGroups.push({id:id(),name,exercises,createdAt:todayISO()});}
+    save();$("groupDialog").close();renderSavedGroups();showToast(editingGroupId?"Kayıtlı grup güncellendi.":"Antrenman grubu kaydedildi.");editingGroupId=null;
+  }
+  function loadSavedGroup(groupId){
+    if(dayLocked()){showToast("Bugün tamamlandı; plan kilitli.");return;}
+    const group=(state.savedGroups||[]).find(g=>g.id===groupId);if(!group)return;
+    const list=ensureDay();let added=0,skipped=0;
+    group.exercises.forEach(t=>{
+      if(list.some(e=>e.name.toLocaleLowerCase("tr")===t.name.toLocaleLowerCase("tr"))){skipped++;return;}
+      const e=exerciseFromTemplate(t,{pinned:false,mode:t.mode,sets:t.sets,reps:t.reps,targetReps:t.targetReps,target:t.target,unit:t.unit});
+      e.pinned=false;list.push(e);added++;
+    });
+    save();render();showToast(added?`${group.name} yüklendi: ${added} hareket${skipped?`, ${skipped} zaten plandaydı`:""}.`:`Bu gruptaki hareketler zaten günlük planda.`);
   }
   function renderStats(){
     const list=dayList(), p=progress(), done=list.filter(isExerciseComplete).length;
@@ -333,6 +386,9 @@
   $("saveEdit").addEventListener("click",()=>{if(!dayLocked())saveEdit();});
   $("deleteExercise").addEventListener("click",()=>{if(editingId&&!dayLocked()){removeExercise(editingId);$("editDialog").close();}});
   $("finishBtn").addEventListener("click",finishWorkout);
+  $("saveWorkoutGroup").addEventListener("click",()=>openGroupDialog());
+  $("confirmGroupSave").addEventListener("click",saveWorkoutGroup);
+  $("cancelGroup").addEventListener("click",()=>$("groupDialog").close());
   $("repMode").addEventListener("change",()=>{$("fixedFields").hidden=$("repMode").value==="flex";$("flexFields").hidden=$("repMode").value!=="flex";});
   $("editRepMode").addEventListener("change",()=>{$("editFixedFields").hidden=$("editRepMode").value==="flex";$("editFlexFields").hidden=$("editRepMode").value!=="flex";});
   $("selectedDate").addEventListener("change",e=>{if(e.target.value){selectedDate=e.target.value;ensurePinnedDay(selectedDate);render();}});

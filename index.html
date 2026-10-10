@@ -67,6 +67,10 @@
             </div>
             <div class="legend"><span class="legend-dot"></span> Kaydedilenler otomatik saklanır</div>
           </div>
+          <section class="saved-workouts">
+            <div class="saved-heading"><div><h3>▣ Kayıtlı antrenmanlar</h3><p>Programlarını kaydet, istediğin gün yeniden kullan.</p></div><button class="secondary-btn" type="button" id="saveWorkoutGroup">＋ Grubu kaydet</button></div>
+            <div id="savedGroupsList" class="saved-groups-list"></div>
+          </section>
           <div id="workoutList" class="workout-list"></div>
           <div class="empty-state" id="emptyState">
             <div class="empty-icon">＋</div>
@@ -159,6 +163,15 @@
     </form>
   </dialog>
 
+  <dialog id="groupDialog" class="modal">
+    <form method="dialog" class="modal-card config-card" id="groupForm">
+      <div class="modal-head"><div><div class="eyebrow">KAYITLI ANTRENMAN</div><h2 id="groupDialogTitle">Grubu kaydet</h2></div><button class="close-btn" value="cancel" aria-label="Kapat">×</button></div>
+      <label class="edit-label">Grup adı<input id="groupName" placeholder="Örn. 1. Grup — Üst vücut" maxlength="60" required></label>
+      <p class="config-description">Hareketler, set/tekrar hedefleri ve kardiyo hedefleri kaydedilir. Yüklediğinde tüm değerleri günlük planda değiştirebilirsin.</p>
+      <div id="groupPreview" class="group-preview"></div>
+      <div class="modal-actions"><button type="button" class="secondary-btn" id="cancelGroup">Vazgeç</button><button type="button" class="primary-btn" id="confirmGroupSave">Kaydet</button></div>
+    </form>
+  </dialog>
   <div class="toast" id="toast" role="status"></div>
   <script src="app.js"></script>
 </body>

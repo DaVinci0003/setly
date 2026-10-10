@@ -1,29 +1,23 @@
-# Setly — Antrenman Takibi
+# Setly — bağımsız adres sürümü
 
-GitHub Pages için gözden geçirilmiş Setly paketi. Dosyaları GitHub'daki **setly deposunun köküne** yükleyin; `index.html` doğrudan `https://davinci0003.github.io/setly/` adresinden erişilebilir olmalıdır. `antrenman_takip` gibi ek bir klasörün içine koymayın.
+Bu paket, Setly'yi `davinci0003.github.io/setly/` yolundan bağımsız, kendi origin'inde yayınlamak içindir.
 
-## İçerik
-- `index.html`, `styles.css`, `app.js`: uygulama arayüzü ve davranışları.
-- `manifest.webmanifest`: `/setly/` altında açık ve ayrı PWA kimliği, başlangıç adresi ve kapsam.
-- `sw.js`: yalnızca `/setly/` kapsamına müdahale eder; yalnızca `setly-cache-*` önbelleklerini temizler. Aynı alan adındaki LEVEL UP önbelleklerini silmez ve diğer uygulamaların önbellek yanıtlarını aramaz.
-- `assets/icon-192.png`, `assets/icon-512.png`, `assets/icon.svg`: uygulama simgeleri.
+## Netlify ile yayınlama
+1. Netlify hesabında `https://app.netlify.com/drop` sayfasını aç.
+2. Bu ZIP'i önce bilgisayarında bir klasöre çıkar.
+3. Çıkarılmış klasörün içeriğini (index.html, app.js, styles.css, manifest.webmanifest, sw.js ve assets klasörü) Netlify Drop alanına sürükle. ZIP'in kendisini değil, çıkarılmış klasörü yükle.
+4. Netlify'nin verdiği yeni `*.netlify.app` adresini aç.
+5. Önce manifest adresinin `/manifest.webmanifest` ile açıldığını, ardından ana sayfanın çalıştığını kontrol et.
+6. Telefonda yalnızca yeni Netlify adresini Chrome'da açıp uygulamayı yükle.
 
-## Özellikler
-- Hareket arama ve kategori filtreleri: vücut ağırlığı, dumbbell, barbell, kardiyo ve makineler.
-- Düzenli set/tekrar veya serbest set modu. Serbest modda her `+` kaydı girilen seti kaydeder ve hedefe ulaşılmadıysa yeni boş set açar.
-- Kardiyo hedefleri, sabit hareketler, tarih seçimi, günlük ilerleme, toplam tekrar, son 7 gün ve son 30 günlük dağılım.
-- Özel hareket ekleme, düzenleme ve silme.
-- Antrenman tamamlanınca ilgili gün kilitlenir; o güne yeni hareket eklenemez ve mevcut girişler değiştirilemez.
-- Veriler tarayıcının bu siteye ait yerel depolamasında tutulur; otomatik cihazlar arası eşitleme yoktur.
+Bu sürüm kök dizinde (`/`) çalışacak şekilde düzenlenmiştir. Eski GitHub Pages adresindeki Setly'yi değiştirmez; Level Up'a dokunmaz.
 
-## GitHub Pages'e yükleme
-1. ZIP içindeki dosyaları çıkarın.
-2. İçindeki dosya ve `assets` klasörünü doğrudan `setly` deposunun köküne yükleyin.
-3. GitHub Pages yayınını tamamladıktan sonra şu adresleri kontrol edin:
-   - `https://davinci0003.github.io/setly/`
-   - `https://davinci0003.github.io/setly/manifest.webmanifest`
-   - `https://davinci0003.github.io/setly/sw.js`
-4. Telefonda önce siteyi normal Chrome sekmesinde açın. Güncel dosyalar yayınlandıktan sonra Chrome'u tamamen kapatıp yeniden açın ve yüklemeyi yeniden deneyin.
+Not: Yeni origin eski Chrome uygulama kaydından ayrılmayı sağlar, fakat kurulumun kesin başarılı olacağı garanti edilemez. Yeni adresin kurulumu başarısız olursa hata mesajı üzerinden devam edilir.
 
-## Önemli not
-Bu paket, manifest kimliğini ve servis çalışanı kapsamını açıkça ayırır ve aynı origin'deki diğer uygulamaların önbelleklerini silmez. Ancak Android/Chrome'un daha önce oluşturduğu bozuk bir kurulum kaydını uzaktan kesin olarak silemez. Böyle bir kayıt sürerse Chrome/Android tarafında ayrıca kaldırılması gerekebilir.
+## Yeni özellik: Kayıtlı antrenman grupları
+- Günlük plana hareket ekledikten sonra **Grubu kaydet** ile isimli program oluşturabilirsin.
+- Kayıtlı programlar günlük antrenmanın üst kısmında görünür.
+- **Yükle** seçilen gruptaki hareketleri ve hedeflerini bugünkü plana ekler; o günün set ilerlemeleri sıfırdan başlar.
+- **Düzenle** ile grup adını ve set/tekrar veya kardiyo hedeflerini değiştirebilirsin. **Sil** yalnızca kayıtlı şablonu kaldırır.
+- Aynı hareket günlük planda zaten varsa ikinci kez eklenmez.
+- Kayıtlı gruplar bu cihazın yerel verilerinde saklanır; eski antrenman verilerinin anahtarı korunmuştur.
