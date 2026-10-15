@@ -140,8 +140,8 @@
       </div>
       <p class="config-description" id="configDescription">Hedefini belirle.</p>
       <div id="strengthFields">
-        <label class="mode-label">Tekrar takibi<select id="repMode"><option value="fixed">Düzenli setler</option><option value="flex">Serbest setler · toplam tekrar hedefi</option></select></label>
-        <div class="field-grid" id="fixedFields"><label>Set sayısı<input id="setCount" type="number" min="1" max="30" value="3" required></label><label>Set başına tekrar<input id="repCount" type="number" min="1" max="1000" value="10" required></label></div>
+        <label class="mode-label">Tekrar takibi<select id="repMode"><option value="fixed">Düzenli setler</option><option value="openSets">Serbest setler · set başına hedef yok</option><option value="flex">Serbest setler · toplam tekrar hedefi</option></select></label>
+        <div class="field-grid" id="fixedFields"><label>Set sayısı<input id="setCount" type="number" min="1" max="30" value="3" required></label><label>Set başına tekrar<input id="repCount" type="number" min="1" max="1000" value="10" required></label></div><div class="field-grid" id="openSetFields" hidden><label>Set sayısı<input id="openSetCount" type="number" min="1" max="30" value="10" required></label><p class="config-description">Her sette yaptığın tekrar sayısını kendin yazacaksın. Sabit tekrar hedefi yok.</p></div>
         <div class="field-grid" id="flexFields" hidden><label>Toplam tekrar hedefi<input id="totalTarget" type="number" min="1" max="100000" value="100" required></label></div>
       </div>
       <div class="field-grid" id="cardioFields" hidden>
@@ -157,7 +157,7 @@
     <form method="dialog" class="modal-card config-card">
       <div class="modal-head"><div><div class="eyebrow">HAREKETİ DÜZENLE</div><h2 id="editTitle">Düzenle</h2></div><button class="close-btn" value="cancel" aria-label="Kapat">×</button></div>
       <label class="edit-label">Hareket adı<input id="editName"></label>
-      <div id="editStrengthFields"><label class="mode-label">Tekrar takibi<select id="editRepMode"><option value="fixed">Düzenli setler</option><option value="flex">Serbest setler · toplam tekrar hedefi</option></select></label><div class="field-grid" id="editFixedFields"><label>Set sayısı<input id="editSets" type="number" min="1" max="30"></label><label>Set başına tekrar<input id="editReps" type="number" min="1" max="1000"></label></div><div class="field-grid" id="editFlexFields" hidden><label>Toplam tekrar hedefi<input id="editTarget" type="number" min="1" max="100000"></label></div></div>
+      <div id="editStrengthFields"><label class="mode-label">Tekrar takibi<select id="editRepMode"><option value="fixed">Düzenli setler</option><option value="openSets">Serbest setler · set başına hedef yok</option><option value="flex">Serbest setler · toplam tekrar hedefi</option></select></label><div class="field-grid" id="editFixedFields"><label>Set sayısı<input id="editSets" type="number" min="1" max="30"></label><label>Set başına tekrar<input id="editReps" type="number" min="1" max="1000"></label></div><div class="field-grid" id="editOpenSetFields" hidden><label>Set sayısı<input id="editOpenSetCount" type="number" min="1" max="30"></label><p class="config-description">Her setin tekrarını ayrı ayrı gir.</p></div><div class="field-grid" id="editFlexFields" hidden><label>Toplam tekrar hedefi<input id="editTarget" type="number" min="1" max="100000"></label></div></div>
       <div class="field-grid" id="editCardioFields" hidden><label>Mesafe / süre hedefi<input id="editDistance" type="number" min="0.1" step="0.1"></label><label>Tür<select id="editCardioType"><option value="km">Kilometre</option><option value="dk">Dakika</option></select></label></div>
       <div class="modal-actions"><button type="button" class="secondary-btn" id="deleteExercise">Sil</button><button type="button" class="primary-btn" id="saveEdit">Değişiklikleri kaydet</button></div>
     </form>

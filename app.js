@@ -66,6 +66,7 @@
     const e={id:id(),name:template.name,category:template.category,icon:template.icon,type:template.type||"strength",pinned:!!options.pinned,createdAt:selectedDate};
     if(e.type==="cardio"){e.target=Number(options.target)||4;e.unit=options.unit||"km";e.done=false;}
     else if(options.mode==="flex") {e.mode="flex";e.targetReps=Number(options.targetReps)||100;e.sets=1;e.reps=0;e.setProgress=[{actual:0,done:false}];}
+    else if(options.mode==="openSets"){e.mode="openSets";e.sets=Number(options.sets)||10;e.reps=0;e.setProgress=createProgress(e);}
     else {e.mode="fixed";e.sets=Number(options.sets)||3;e.reps=Number(options.reps)||10;e.setProgress=createProgress(e);}
     return e;
   }
@@ -76,7 +77,7 @@
     const e=exerciseFromTemplate(template,options);list.push(e);
     if(e.pinned && !state.pinned.some(p=>p.name.toLocaleLowerCase("tr")===e.name.toLocaleLowerCase("tr"))){
       const pin={name:e.name,category:e.category,icon:e.icon,type:e.type,pinned:true};
-      if(e.type==="cardio"){pin.target=e.target;pin.unit=e.unit;}else if(e.mode==="flex"){pin.mode="flex";pin.targetReps=e.targetReps;}else{pin.mode="fixed";pin.sets=e.sets;pin.reps=e.reps;}
+      if(e.type==="cardio"){pin.target=e.target;pin.unit=e.unit;}else if(e.mode==="flex"){pin.mode="flex";pin.targetReps=e.targetReps;}else if(e.mode==="openSets"){pin.mode="openSets";pin.sets=e.sets;}else{pin.mode="fixed";pin.sets=e.sets;pin.reps=e.reps;}
       state.pinned.push(pin);
     }
     save();render();$("configDialog").close();$("addDialog").close();showToast(`${e.name} plana eklendi.`);
@@ -85,7 +86,7 @@
     const idx=state.pinned.findIndex(p=>p.name.toLocaleLowerCase("tr")===e.name.toLocaleLowerCase("tr"));
     if(e.pinned){
       const p={name:e.name,category:e.category,icon:e.icon,type:e.type,pinned:true};
-      if(e.type==="cardio"){p.target=e.target;p.unit=e.unit;}else if(e.mode==="flex"){p.mode="flex";p.targetReps=e.targetReps;}else{p.mode="fixed";p.sets=e.sets;p.reps=e.reps;}
+      if(e.type==="cardio"){p.target=e.target;p.unit=e.unit;}else if(e.mode==="flex"){p.mode="flex";p.targetReps=e.targetReps;}else if(e.mode==="openSets"){p.mode="openSets";p.sets=e.sets;}else{p.mode="fixed";p.sets=e.sets;p.reps=e.reps;}
       if(idx>=0)state.pinned[idx]=p;else state.pinned.push(p);
     } else if(idx>=0)state.pinned.splice(idx,1);
   }
@@ -147,7 +148,7 @@
           <div class="exercise-title-wrap">
             <div class="exercise-icon">${safeText(e.icon||"🏋️")}</div>
             <div><div class="exercise-name">${safeText(e.name)}</div>
-            <div class="exercise-meta">${safeText(e.category||"Kişisel hareket")} · ${e.type==="cardio" ? `${e.target} ${e.unit==="dk"?"dk":"km"} hedef` : e.mode==="flex" ? `Toplam ${e.targetReps} tekrar hedef` : `${e.sets} set × ${e.reps} tekrar hedef`}${complete?' · <span style="color:var(--green)">Tamamlandı ✓</span>':""}</div></div>
+            <div class="exercise-meta">${safeText(e.category||"Kişisel hareket")} · ${e.type==="cardio" ? `${e.target} ${e.unit==="dk"?"dk":"km"} hedef` : e.mode==="flex" ? `Toplam ${e.targetReps} tekrar hedef` : e.mode==="openSets" ? `${e.sets} serbest set · tekrar hedefi yok` : `${e.sets} set × ${e.reps} tekrar hedef`}${complete?' · <span style="color:var(--green)">Tamamlandı ✓</span>':""}</div></div>
           </div>
           <div class="exercise-actions">
             <button class="tiny-btn pin-btn ${e.pinned?"active":""}" data-action="pin" title="${e.pinned?"Sabitlemeyi kaldır":"Her gün sabitle"}">${e.pinned?"◆ Sabit":"◇ Sabitle"}</button>
@@ -172,7 +173,7 @@
           <div class="sets-row">${(e.setProgress||[]).map((p,i)=>`
             <div class="set-box ${p.done?"done":""}">
               <span class="set-number">${i+1}. SET</span>
-              <input class="rep-input" type="number" min="0" max="100000" inputmode="numeric" id="actual-${e.id}-${i}" value="${p.actual||""}" placeholder="${e.reps}" aria-label="${i+1}. set yapılan tekrar">
+              <input class="rep-input" type="number" min="0" max="100000" inputmode="numeric" id="actual-${e.id}-${i}" value="${p.actual||""}" placeholder="${e.mode==="openSets"?"Tekrar":e.reps}" aria-label="${i+1}. set yapılan tekrar">
               <span class="rep-unit">tekrar</span>
               <button class="plus-btn" data-action="rep" data-index="${i}" aria-label="${i+1}. seti kaydet">+</button>
               <input class="set-check" type="checkbox" data-action="set" data-index="${i}" ${p.done?"checked":""} aria-label="${i+1}. set tamamlandı">
@@ -211,6 +212,7 @@
     const out={name:e.name,category:e.category||"Kişisel",icon:e.icon||"🏋️",type:e.type||"strength",pinned:false};
     if(out.type==="cardio"){out.target=Number(e.target)||4;out.unit=e.unit||"km";}
     else if(e.mode==="flex"){out.mode="flex";out.targetReps=Number(e.targetReps)||100;}
+    else if(e.mode==="openSets"){out.mode="openSets";out.sets=Number(e.sets)||10;}
     else{out.mode="fixed";out.sets=Number(e.sets)||3;out.reps=Number(e.reps)||10;}
     return out;
   }
@@ -220,7 +222,7 @@
     if(!groups.length){root.innerHTML='<div class="saved-empty">Henüz kayıtlı program yok. Günlük planını oluşturup <strong>Grubu kaydet</strong> düğmesine bas.</div>';return;}
     groups.forEach(g=>{
       const card=document.createElement("article");card.className="saved-group-card";
-      const summary=(g.exercises||[]).map(e=>`${safeText(e.name)} · ${e.type==="cardio"?`${e.target} ${e.unit==="dk"?"dk":"km"}`:e.mode==="flex"?`serbest · hedef ${e.targetReps}`:`${e.sets}×${e.reps}`}`).join(" <span>•</span> ");
+      const summary=(g.exercises||[]).map(e=>`${safeText(e.name)} · ${e.type==="cardio"?`${e.target} ${e.unit==="dk"?"dk":"km"}`:e.mode==="flex"?`serbest · hedef ${e.targetReps}`:e.mode==="openSets"?`${e.sets} serbest set`:`${e.sets}×${e.reps}`}`).join(" <span>•</span> ");
       card.innerHTML=`<div class="saved-group-copy"><strong>${safeText(g.name)}</strong><div class="saved-group-meta">${(g.exercises||[]).length} hareket</div><div class="saved-group-summary">${summary}</div></div><div class="saved-group-actions"><button type="button" class="tiny-btn" data-group-action="load">Yükle</button><button type="button" class="tiny-btn" data-group-action="edit">Düzenle</button><button type="button" class="tiny-btn remove-btn" data-group-action="delete">Sil</button></div>`;
       card.querySelector('[data-group-action="load"]').addEventListener("click",()=>loadSavedGroup(g.id));
       card.querySelector('[data-group-action="edit"]').addEventListener("click",()=>openGroupDialog(g));
@@ -234,7 +236,7 @@
     $("groupDialogTitle").textContent=group?"Grubu düzenle":"Antrenmanı kaydet";
     $("groupName").value=group?.name||"";
     const exercises=group?.exercises||dayList().map(groupExerciseSnapshot);
-    $("groupPreview").innerHTML=exercises.length?exercises.map((e,i)=>`<div class="group-preview-row edit-group-row"><div class="group-exercise-label"><span>${safeText(e.icon||"🏋️")} ${safeText(e.name)}</span><small>${e.type==="cardio"?"Kardiyo":e.mode==="flex"?"Serbest tekrar":"Düzenli set"}</small></div>${group?`<div class="group-edit-fields">${e.type==="cardio"?`<label>Hedef<input data-group-index="${i}" data-field="target" type="number" min="0.1" step="0.1" value="${Number(e.target)||4}"></label><label>Birim<select data-group-index="${i}" data-field="unit"><option value="km" ${e.unit!=="dk"?"selected":""}>km</option><option value="dk" ${e.unit==="dk"?"selected":""}>dk</option></select></label>`:e.mode==="flex"?`<label>Toplam hedef<input data-group-index="${i}" data-field="targetReps" type="number" min="1" value="${Number(e.targetReps)||100}"></label>`:`<label>Set<input data-group-index="${i}" data-field="sets" type="number" min="1" max="30" value="${Number(e.sets)||3}"></label><label>Tekrar<input data-group-index="${i}" data-field="reps" type="number" min="1" max="1000" value="${Number(e.reps)||10}"></label>`}</div>`:`<small>${e.type==="cardio"?`${e.target} ${e.unit==="dk"?"dk":"km"}`:e.mode==="flex"?`Serbest · ${e.targetReps} tekrar hedef`:`${e.sets} set × ${e.reps} tekrar`}</small>`}</div>`).join(""):'<p class="saved-empty">Bu grupta henüz hareket yok.</p>';
+    $("groupPreview").innerHTML=exercises.length?exercises.map((e,i)=>`<div class="group-preview-row edit-group-row"><div class="group-exercise-label"><span>${safeText(e.icon||"🏋️")} ${safeText(e.name)}</span><small>${e.type==="cardio"?"Kardiyo":e.mode==="flex"?"Toplam tekrar hedefi":e.mode==="openSets"?"Serbest setler":"Düzenli set"}</small></div>${group?`<div class="group-edit-fields">${e.type==="cardio"?`<label>Hedef<input data-group-index="${i}" data-field="target" type="number" min="0.1" step="0.1" value="${Number(e.target)||4}"></label><label>Birim<select data-group-index="${i}" data-field="unit"><option value="km" ${e.unit!=="dk"?"selected":""}>km</option><option value="dk" ${e.unit==="dk"?"selected":""}>dk</option></select></label>`:e.mode==="flex"?`<label>Toplam hedef<input data-group-index="${i}" data-field="targetReps" type="number" min="1" value="${Number(e.targetReps)||100}"></label>`:e.mode==="openSets"?`<label>Set sayısı<input data-group-index="${i}" data-field="sets" type="number" min="1" max="30" value="${Number(e.sets)||10}"></label>`:`<label>Set<input data-group-index="${i}" data-field="sets" type="number" min="1" max="30" value="${Number(e.sets)||3}"></label><label>Tekrar<input data-group-index="${i}" data-field="reps" type="number" min="1" max="1000" value="${Number(e.reps)||10}"></label>`}</div>`:`<small>${e.type==="cardio"?`${e.target} ${e.unit==="dk"?"dk":"km"}`:e.mode==="flex"?`Serbest · ${e.targetReps} tekrar hedef`:e.mode==="openSets"?`${e.sets} serbest set · hedef yok`:`${e.sets} set × ${e.reps} tekrar`}</small>`}</div>`).join(""):'<p class="saved-empty">Bu grupta henüz hareket yok.</p>';
     $("groupDialog").showModal();
   }
   function saveWorkoutGroup(){
@@ -324,10 +326,10 @@
   function openConfig(template){
     pendingExercise=template;
     $("configTitle").textContent=template.name;
-    $("configDescription").textContent=template.type==="cardio"?"Koşu, yürüyüş veya kardiyo hedefini mesafe ya da süre olarak belirle.":"Düzenli setleri seçebilir veya toplam tekrar hedefi koyup serbest setler halinde ilerleyebilirsin.";
+    $("configDescription").textContent=template.type==="cardio"?"Koşu, yürüyüş veya kardiyo hedefini mesafe ya da süre olarak belirle.":"Düzenli setleri, tekrar hedefi olmayan serbest setleri veya toplam tekrar hedefini seçebilirsin.";
     const cardio=template.type==="cardio";
     $("strengthFields").hidden=cardio;$("cardioFields").hidden=!cardio;
-    $("repMode").value="fixed";$("fixedFields").hidden=false;$("flexFields").hidden=true;
+    $("repMode").value="fixed";$("fixedFields").hidden=false;$("openSetFields").hidden=true;$("flexFields").hidden=true;
     $("setCount").value=3;$("repCount").value=10;$("totalTarget").value=100;$("distanceCount").value=4;$("cardioType").value="km";$("pinOnAdd").checked=true;
     $("addDialog").close();$("configDialog").showModal();
   }
@@ -336,7 +338,7 @@
     $("editTitle").textContent=e.name;$("editName").value=e.name;
     const cardio=e.type==="cardio";$("editStrengthFields").hidden=cardio;$("editCardioFields").hidden=!cardio;
     if(cardio){$("editDistance").value=e.target;$("editCardioType").value=e.unit||"km";}
-    else{$("editRepMode").value=e.mode==="flex"?"flex":"fixed";$("editFixedFields").hidden=e.mode==="flex";$("editFlexFields").hidden=e.mode!=="flex";$("editSets").value=e.sets||3;$("editReps").value=e.reps||10;$("editTarget").value=e.targetReps||100;}
+    else{$("editRepMode").value=e.mode==="flex"?"flex":e.mode==="openSets"?"openSets":"fixed";$("editFixedFields").hidden=e.mode!=="fixed";$("editOpenSetFields").hidden=e.mode!=="openSets";$("editFlexFields").hidden=e.mode!=="flex";$("editSets").value=e.sets||3;$("editOpenSetCount").value=e.sets||10;$("editReps").value=e.reps||10;$("editTarget").value=e.targetReps||100;}
     $("editDialog").showModal();
   }
   function saveEdit(){
@@ -349,6 +351,8 @@
       if(!wasFlex)e.setProgress=[{actual:0,done:false}];
       if(!e.setProgress||!e.setProgress.length)e.setProgress=[{actual:0,done:false}];
       if(e.setProgress.every(p=>p.done)&&flexTotal(e)<e.targetReps)e.setProgress.push({actual:0,done:false});
+    } else if($("editRepMode").value==="openSets"){
+      const wasOpen=e.mode==="openSets";const sets=Math.max(1,Math.min(30,Number($("editOpenSetCount").value)||10));const old=e.setProgress||[];e.mode="openSets";e.sets=sets;e.reps=0;e.setProgress=Array.from({length:sets},(_,i)=>old[i]||({actual:0,done:false}));
     } else {
       const sets=Math.max(1,Math.min(30,Number($("editSets").value)||1));
       const reps=Math.max(1,Math.min(1000,Number($("editReps").value)||1));
@@ -379,6 +383,7 @@
     const options={pinned:$("pinOnAdd").checked};
     if(cardio){options.target=Number($("distanceCount").value)||4;options.unit=$("cardioType").value;}
     else if($("repMode").value==="flex"){options.mode="flex";options.targetReps=Number($("totalTarget").value)||100;}
+    else if($("repMode").value==="openSets"){options.mode="openSets";options.sets=Number($("openSetCount").value)||10;}
     else{options.mode="fixed";options.sets=Number($("setCount").value)||3;options.reps=Number($("repCount").value)||10;}
     addExercise(pendingExercise,options);
   });
@@ -389,8 +394,8 @@
   $("saveWorkoutGroup").addEventListener("click",()=>openGroupDialog());
   $("confirmGroupSave").addEventListener("click",saveWorkoutGroup);
   $("cancelGroup").addEventListener("click",()=>$("groupDialog").close());
-  $("repMode").addEventListener("change",()=>{$("fixedFields").hidden=$("repMode").value==="flex";$("flexFields").hidden=$("repMode").value!=="flex";});
-  $("editRepMode").addEventListener("change",()=>{$("editFixedFields").hidden=$("editRepMode").value==="flex";$("editFlexFields").hidden=$("editRepMode").value!=="flex";});
+  $("repMode").addEventListener("change",()=>{const m=$("repMode").value;$("fixedFields").hidden=m!=="fixed";$("openSetFields").hidden=m!=="openSets";$("flexFields").hidden=m!=="flex";});
+  $("editRepMode").addEventListener("change",()=>{const m=$("editRepMode").value;$("editFixedFields").hidden=m!=="fixed";$("editOpenSetFields").hidden=m!=="openSets";$("editFlexFields").hidden=m!=="flex";});
   $("selectedDate").addEventListener("change",e=>{if(e.target.value){selectedDate=e.target.value;ensurePinnedDay(selectedDate);render();}});
   $("prevDay").addEventListener("click",()=>{selectedDate=shiftDate(selectedDate,-1);ensurePinnedDay(selectedDate);render();});
   $("nextDay").addEventListener("click",()=>{selectedDate=shiftDate(selectedDate,1);ensurePinnedDay(selectedDate);render();});
@@ -404,6 +409,7 @@
         const e={...p,id:id(),pinned:true,createdAt:date};
         if(e.type==="cardio"){e.done=false;e.target=Number(e.target)||4;e.unit=e.unit||"km";}
         else if(e.mode==="flex"){e.targetReps=Number(e.targetReps)||100;e.sets=1;e.reps=0;e.setProgress=[{actual:0,done:false}];}
+        else if(e.mode==="openSets"){e.sets=Number(e.sets)||10;e.reps=0;e.setProgress=createProgress(e);}
         else{e.mode="fixed";e.sets=Number(e.sets)||3;e.reps=Number(e.reps)||10;e.setProgress=createProgress(e);}
         list.push(e);
       }

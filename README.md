@@ -21,3 +21,10 @@ Not: Yeni origin eski Chrome uygulama kaydından ayrılmayı sağlar, fakat kuru
 - **Düzenle** ile grup adını ve set/tekrar veya kardiyo hedeflerini değiştirebilirsin. **Sil** yalnızca kayıtlı şablonu kaldırır.
 - Aynı hareket günlük planda zaten varsa ikinci kez eklenmez.
 - Kayıtlı gruplar bu cihazın yerel verilerinde saklanır; eski antrenman verilerinin anahtarı korunmuştur.
+
+
+## Yeni özellik: Serbest set sayısı
+- Hareket eklerken **Serbest setler · set başına hedef yok** seçeneğini kullan.
+- Set sayısını (ör. 10) belirle; her sette yaptığın tekrar sayısını kendin girip **+** ile kaydet.
+- Setlerin tekrar hedefi yoktur; tamamlanma için her seti girip işaretlemen gerekir.
+- Bu mod kayıtlı antrenman gruplarında ve sabitlenen hareketlerde de saklanır.
