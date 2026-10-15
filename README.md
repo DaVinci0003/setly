@@ -28,3 +28,7 @@ Not: Yeni origin eski Chrome uygulama kaydından ayrılmayı sağlar, fakat kuru
 - Set sayısını (ör. 10) belirle; her sette yaptığın tekrar sayısını kendin girip **+** ile kaydet.
 - Setlerin tekrar hedefi yoktur; tamamlanma için her seti girip işaretlemen gerekir.
 - Bu mod kayıtlı antrenman gruplarında ve sabitlenen hareketlerde de saklanır.
+
+
+## Günlük set performans grafiği
+Her hareket kartının altında, o gün kaydedilmiş setlerin tekrar sayılarını ayrı sütunlarla gösteren bir grafik görünür. Grafik yalnızca seçili gün ve ilgili hareketin set kayıtlarını gösterir; genel istatistiklere veya diğer hareketlerin toplamlarına ek bir değer yazmaz. Başka bir güne geçince o günün kayıtları görüntülenir.

@@ -129,6 +129,25 @@
     const e=findExercise(exId);if(!e)return;e.done=!e.done;save();render();
     if(e.done)showToast(`${e.name} tamamlandı. Harika iş!`);
   }
+
+  function renderSetPerformance(e){
+    if(e.type==="cardio") return "";
+    const points=(e.setProgress||[]).map((p,i)=>({set:i+1,reps:Number(p.actual)||0,done:!!p.done})).filter(p=>p.done);
+    if(!points.length) return "";
+    const max=Math.max(1,...points.map(p=>p.reps));
+    const bars=points.map(p=>{
+      const h=Math.max(8,Math.round((p.reps/max)*76));
+      return `<div class="performance-bar-col" title="${p.set}. set: ${p.reps} tekrar">
+        <strong>${p.reps}</strong><div class="performance-bar-track"><div class="performance-bar-fill" style="height:${h}px"></div></div><small>${p.set}. set</small>
+      </div>`;
+    }).join("");
+    const total=points.reduce((n,p)=>n+p.reps,0);
+    return `<section class="set-performance" aria-label="${safeText(e.name)} günlük set performansı">
+      <div class="set-performance-head"><strong>Bugünkü set performansı</strong><span>${total} toplam tekrar</span></div>
+      <div class="performance-chart">${bars}</div>
+      <div class="performance-foot">Yalnızca ${safeText(prettyDate(selectedDate))} günü · Bu hareketin setleri</div>
+    </section>`;
+  }
   function render(){
     $("selectedDate").value=selectedDate;
     $("workoutList").innerHTML="";
@@ -180,7 +199,7 @@
             </div>`).join("")}
           <span class="set-count-label">${(e.setProgress||[]).filter(p=>p.done).length}/${e.sets} set</span></div>
         `}
-      `;
+      ` + renderSetPerformance(e);
       card.querySelectorAll("[data-action]").forEach(btn=>{
         btn.addEventListener("click",ev=>{
           const action=btn.dataset.action;
