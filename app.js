@@ -132,7 +132,7 @@
 
   function renderSetPerformance(e){
     if(e.type==="cardio") return "";
-    const points=(e.setProgress||[]).map((p,i)=>({set:i+1,reps:Number(p.actual)||0,done:!!p.done})).filter(p=>p.done);
+    const points=(e.setProgress||[]).map((p,i)=>({set:i+1,reps:Number(p.actual)||0,done:!!p.done})).filter(p=>p.done || p.actual>0);
     if(!points.length) return "";
     const max=Math.max(1,...points.map(p=>p.reps));
     const bars=points.map(p=>{

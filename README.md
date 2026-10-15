@@ -1,34 +1,14 @@
-# Setly — bağımsız adres sürümü
+# Setly — Günlük Set Performans Grafiği (GitHub Pages)
 
-Bu paket, Setly'yi `davinci0003.github.io/setly/` yolundan bağımsız, kendi origin'inde yayınlamak içindir.
+Bu ZIP, `https://davinci0003.github.io/setly/` gibi bir GitHub Pages proje yoluna göre hazırlanmıştır.
 
-## Netlify ile yayınlama
-1. Netlify hesabında `https://app.netlify.com/drop` sayfasını aç.
-2. Bu ZIP'i önce bilgisayarında bir klasöre çıkar.
-3. Çıkarılmış klasörün içeriğini (index.html, app.js, styles.css, manifest.webmanifest, sw.js ve assets klasörü) Netlify Drop alanına sürükle. ZIP'in kendisini değil, çıkarılmış klasörü yükle.
-4. Netlify'nin verdiği yeni `*.netlify.app` adresini aç.
-5. Önce manifest adresinin `/manifest.webmanifest` ile açıldığını, ardından ana sayfanın çalıştığını kontrol et.
-6. Telefonda yalnızca yeni Netlify adresini Chrome'da açıp uygulamayı yükle.
+## Yükleme
+1. ZIP'i çıkar.
+2. İçindeki `index.html`, `app.js`, `styles.css`, `manifest.webmanifest`, `sw.js` dosyalarını ve `assets` klasörünü mevcut `setly` deposunun köküne yükle/üzerine yaz.
+3. GitHub Pages dağıtımı tamamlandıktan sonra sitede bilgisayarda `Ctrl + Shift + R` yap.
+4. Setly'yi aç, bir hareket kartında bir sete tekrar sayısı gir ve o setin yanındaki `+` düğmesine bas. Grafik, o harekete ait kaydedilmiş setlerin altında görünür.
 
-Bu sürüm kök dizinde (`/`) çalışacak şekilde düzenlenmiştir. Eski GitHub Pages adresindeki Setly'yi değiştirmez; Level Up'a dokunmaz.
+## Grafik davranışı
+Her hareketin kendi grafiği vardır. Grafik yalnızca seçili günün o hareketine ait set tekrarlarını gösterir; başka hareketlere veya genel istatistiklere eklenmez. Değer kaydedildiğinde grafik güncellenir. Yeni güne geçince yalnızca o günün verisi görünür.
 
-Not: Yeni origin eski Chrome uygulama kaydından ayrılmayı sağlar, fakat kurulumun kesin başarılı olacağı garanti edilemez. Yeni adresin kurulumu başarısız olursa hata mesajı üzerinden devam edilir.
-
-## Yeni özellik: Kayıtlı antrenman grupları
-- Günlük plana hareket ekledikten sonra **Grubu kaydet** ile isimli program oluşturabilirsin.
-- Kayıtlı programlar günlük antrenmanın üst kısmında görünür.
-- **Yükle** seçilen gruptaki hareketleri ve hedeflerini bugünkü plana ekler; o günün set ilerlemeleri sıfırdan başlar.
-- **Düzenle** ile grup adını ve set/tekrar veya kardiyo hedeflerini değiştirebilirsin. **Sil** yalnızca kayıtlı şablonu kaldırır.
-- Aynı hareket günlük planda zaten varsa ikinci kez eklenmez.
-- Kayıtlı gruplar bu cihazın yerel verilerinde saklanır; eski antrenman verilerinin anahtarı korunmuştur.
-
-
-## Yeni özellik: Serbest set sayısı
-- Hareket eklerken **Serbest setler · set başına hedef yok** seçeneğini kullan.
-- Set sayısını (ör. 10) belirle; her sette yaptığın tekrar sayısını kendin girip **+** ile kaydet.
-- Setlerin tekrar hedefi yoktur; tamamlanma için her seti girip işaretlemen gerekir.
-- Bu mod kayıtlı antrenman gruplarında ve sabitlenen hareketlerde de saklanır.
-
-
-## Günlük set performans grafiği
-Her hareket kartının altında, o gün kaydedilmiş setlerin tekrar sayılarını ayrı sütunlarla gösteren bir grafik görünür. Grafik yalnızca seçili gün ve ilgili hareketin set kayıtlarını gösterir; genel istatistiklere veya diğer hareketlerin toplamlarına ek bir değer yazmaz. Başka bir güne geçince o günün kayıtları görüntülenir.
+Önceki `setly` verileri için kullanılan `setly-workout-v1` kayıt anahtarı korunmuştur.
