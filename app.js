@@ -105,7 +105,7 @@
     if(dayLocked())return;
     const e=findExercise(exId);if(!e)return;
     const n=Math.max(0,Math.min(100000,Number(value)||0));
-    e.setProgress[index].actual=n;save();renderStats();
+    e.setProgress[index].actual=n;save();render();
   }
   function markSet(exId,index,done){
     if(dayLocked())return;
@@ -132,22 +132,19 @@
 
   function renderSetPerformance(e){
     if(e.type==="cardio") return "";
-    const points=(e.setProgress||[]).map((p,i)=>({set:i+1,reps:Number(p.actual)||0,done:!!p.done})).filter(p=>p.done || p.actual>0);
-    if(!points.length) return "";
-    const max=Math.max(1,...points.map(p=>p.reps));
-    const bars=points.map(p=>{
-      const h=Math.max(8,Math.round((p.reps/max)*76));
-      return `<div class="performance-bar-col" title="${p.set}. set: ${p.reps} tekrar">
-        <strong>${p.reps}</strong><div class="performance-bar-track"><div class="performance-bar-fill" style="height:${h}px"></div></div><small>${p.set}. set</small>
-      </div>`;
-    }).join("");
+    const points=(e.setProgress||[]).map((p,i)=>({set:i+1,reps:Math.max(0,Number(p.actual)||0),done:!!p.done,entered:p.actual!==undefined&&p.actual!==null&&p.actual!==""})).filter(p=>p.done||p.entered);
+    if(!points.length) return `<section class="set-performance"><div class="set-performance-head"><strong>Set performansın</strong><span>Tekrar girdikçe grafik oluşur</span></div><div class="performance-foot">Her nokta bir seti gösterir.</div></section>`;
+    const max=Math.max(5,...points.map(p=>p.reps));
+    const w=Math.max(280,points.length*58+48), h=168, left=34,right=w-14,top=18,bottom=128;
+    const x=i=>left+(points.length===1?(right-left)/2:i*(right-left)/(points.length-1));
+    const y=v=>bottom-(v/max)*(bottom-top);
+    const grid=[0,0.25,0.5,0.75,1].map(t=>{const v=Math.round(max*t);const yy=y(v);return `<line x1="${left}" y1="${yy}" x2="${right}" y2="${yy}" class="performance-grid"/><text x="${left-7}" y="${yy+4}" class="performance-axis-label" text-anchor="end">${v}</text>`}).join("");
+    const line=points.map((p,i)=>`${x(i)},${y(p.reps)}`).join(' ');
+    const marks=points.map((p,i)=>`<circle cx="${x(i)}" cy="${y(p.reps)}" r="4.5" class="performance-point"><title>${p.set}. set: ${p.reps} tekrar</title></circle><text x="${x(i)}" y="${y(p.reps)-10}" class="performance-value" text-anchor="middle">${p.reps}</text><text x="${x(i)}" y="150" class="performance-axis-label" text-anchor="middle">${p.set}. set</text>`).join('');
     const total=points.reduce((n,p)=>n+p.reps,0);
-    return `<section class="set-performance" aria-label="${safeText(e.name)} günlük set performansı">
-      <div class="set-performance-head"><strong>Bugünkü set performansı</strong><span>${total} toplam tekrar</span></div>
-      <div class="performance-chart">${bars}</div>
-      <div class="performance-foot">Yalnızca ${safeText(prettyDate(selectedDate))} günü · Bu hareketin setleri</div>
-    </section>`;
+    return `<section class="set-performance" aria-label="${safeText(e.name)} günlük set performansı"><div class="set-performance-head"><strong>Set performansın</strong><span>${total} toplam tekrar</span></div><div class="performance-chart-wrap"><svg class="performance-line-chart" viewBox="0 0 ${w} ${h}" role="img" aria-label="Setlere göre tekrar grafiği">${grid}<line x1="${left}" y1="${bottom}" x2="${right}" y2="${bottom}" class="performance-axis"/><polyline points="${line}" class="performance-line"/>${marks}</svg></div><div class="performance-foot">Yalnızca ${safeText(prettyDate(selectedDate))} günü · Bu hareketin setleri</div></section>`;
   }
+
   function render(){
     $("selectedDate").value=selectedDate;
     $("workoutList").innerHTML="";

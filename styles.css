@@ -41,3 +41,17 @@ main{padding-top:25px}.welcome-row{display:flex;align-items:center;justify-conte
 .performance-bar-col small{font-size:10px;color:var(--muted);white-space:nowrap}
 .performance-foot{font-size:11px;color:var(--muted);margin-top:10px}
 @media(max-width:560px){.set-performance{padding:12px}.performance-chart{gap:7px}.performance-bar-col{flex-basis:38px;min-width:38px}.set-performance-head{align-items:flex-start}.set-performance-head strong{font-size:12px}}
+
+/* Connected set-by-set performance line chart */
+.set-performance{margin-top:14px;padding:13px;border:1px solid var(--border,#26313b);border-radius:14px;background:rgba(100,130,160,.045);min-width:0}
+.set-performance-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;font-size:13px}
+.set-performance-head span{color:var(--muted,#8b98a5);font-size:12px}
+.performance-chart-wrap{width:100%;overflow-x:auto;overscroll-behavior-x:contain}
+.performance-line-chart{display:block;width:100%;min-width:260px;height:auto;max-height:220px;overflow:visible}
+.performance-grid{stroke:currentColor;stroke-opacity:.13;stroke-width:1}
+.performance-axis{stroke:currentColor;stroke-opacity:.4;stroke-width:1}
+.performance-axis-label{font-size:10px;fill:currentColor;opacity:.72}
+.performance-value{font-size:11px;font-weight:700;fill:var(--text,#f1f5f9)}
+.performance-line{fill:none;stroke:var(--blue,#3887ff);stroke-width:2.8;stroke-linecap:round;stroke-linejoin:round}
+.performance-point{fill:var(--blue,#3887ff);stroke:var(--card,#111820);stroke-width:1.5}
+.performance-foot{margin-top:6px;color:var(--muted,#8b98a5);font-size:11px}
