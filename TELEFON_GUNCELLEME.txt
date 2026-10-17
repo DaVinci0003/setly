@@ -1,1 +1,1 @@
-Telefon testi: GitHub Pages dağıtımı tamamlandıktan sonra Setly sayfasını açıp yenileyin. Service worker önbelleği v6-no-ai olarak güncellendi. Tarayıcı verilerini temizlemek gerekmez.
+GitHub Pages dağıtımı tamamlandıktan sonra siteyi normal şekilde yenileyin. Önbellek sürümü güncellendi; tarayıcı verilerini temizlemeyin.

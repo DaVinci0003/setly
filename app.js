@@ -58,6 +58,9 @@
   ].map(([name,level,bodyPart,icon])=>({name,category:"Vücut ağırlığı",icon,type:"strength",level,bodyPart,aliases:"",calisthenics:true}));
   const knownNames = new Set(library.map(e=>e.name.toLocaleLowerCase("tr")));
   calisthenicsCatalog.forEach(e=>{if(!knownNames.has(e.name.toLocaleLowerCase("tr"))) library.push(e);});
+  function inferEquipment(name,category){const n=name.toLocaleLowerCase("tr");if(/dumbbell|dambıl|hammer curl|goblet/.test(n))return "Dumbbell";if(/barbell|halter|deadlift|bench press/.test(n))return "Barbell";if(/machine|makine|cable|kablo|smith|leg press|leg extension|leg curl|assisted pull-up/.test(n))return "Makine";if(/koşu|yürüyüş|bisiklet|kürek|ip atlama|eliptik|merdiven|yüzme/.test(n))return "Kardiyo";if(/ring|halka|muscle.?up|barfiks|pull.?up|chin.?up|dip \(paralel|hanging|toes.to.bar/.test(n))return "Bar ve vücut ağırlığı";return category||"Vücut ağırlığı";}
+  function normalizedLevel(level){return level==="Orta düzey"?"Orta":level==="İleri düzey"?"İleri":level==="Temel düzey"?"Temel":level||"Temel";}
+  library.forEach(e=>{e.level=normalizedLevel(e.level||inferLevel(e.name));e.bodyPart=e.bodyPart||inferBodyPart(e.name);e.equipment=e.equipment||inferEquipment(e.name,e.category);e.aliases=e.aliases||"";});
 
   let state = loadState();
   let selectedDate = todayISO();
@@ -367,7 +370,7 @@
   }
   function openAdd(){
     $("exerciseSearch").value="";activeCategory="Tümü";activeLevel="Tümü";activeBodyPart="Tümü";
-    document.querySelectorAll(".category-chip").forEach(b=>b.classList.toggle("active",b.dataset.category===activeCategory));
+    document.querySelectorAll("[data-category]").forEach(b=>b.classList.toggle("active",b.dataset.category===activeCategory));
     document.querySelectorAll(".level-chip").forEach(b=>b.classList.toggle("active",b.dataset.level===activeLevel));
     document.querySelectorAll(".body-chip").forEach(b=>b.classList.toggle("active",b.dataset.body===activeBodyPart));
     renderLibrary();$("addDialog").showModal();setTimeout(()=>$("exerciseSearch").focus(),60);
@@ -376,10 +379,10 @@
     const q=$("exerciseSearch").value.trim().toLocaleLowerCase("tr");
     const list=library.filter(e=>{
       const aliases=(e.aliases||"").toLocaleLowerCase("tr");
-      return (activeCategory==="Tümü"||e.category===activeCategory) &&
-        (activeLevel==="Tümü"||(e.level||"Temel")===activeLevel) &&
-        (activeBodyPart==="Tümü"||(e.bodyPart||"Diğer")===activeBodyPart) &&
-        (!q||e.name.toLocaleLowerCase("tr").includes(q)||e.category.toLocaleLowerCase("tr").includes(q)||aliases.includes(q)||(e.bodyPart||"").toLocaleLowerCase("tr").includes(q));
+      const fields=[e.name,e.category,e.equipment,e.level,e.bodyPart,aliases].join(" ").toLocaleLowerCase("tr");
+      return (activeCategory==="Tümü"||e.category===activeCategory||e.equipment===activeCategory) &&
+        (activeLevel==="Tümü"||normalizedLevel(e.level)===activeLevel) &&
+        (activeBodyPart==="Tümü"||(e.bodyPart||"Diğer")===activeBodyPart) && (!q||fields.includes(q));
     });
     $("exerciseResults").innerHTML="";
     if(!list.length){$("exerciseResults").innerHTML='<div class="no-results">Bu filtrelerde hareket bulunamadı. Arama veya seviye seçimini değiştirebilirsin.</div>';return;}
@@ -442,18 +445,25 @@
     $("aiDialog").showModal();
   }
   function buildLocalPlan(goal,level,style,minutes,equipment,prompt){
-    const all=library.filter(e=>e.type==="strength" && (e.level||"Temel")!=="İleri");
-    const bodyMap={"Göğüs / itiş":["Şınav","Geniş tutuş şınav","Ayak yükselterek şınav","Dip (paralel bar)"],"Sırt / çekiş":["Barfiks","Negatif barfiks","Ters tutuş barfiks (chin-up)","Scapular pull-up"],"Bacak":["Squat","Lunge","Bulgarian split squat","Calf raise"],"Karın / core":["Plank","Side plank","Leg raise","Hanging knee raise"],"Tüm vücut":["Şınav","Squat","Barfiks","Plank","Lunge"]};
-    let target="Tüm vücut";const g=goal.toLocaleLowerCase("tr");
-    if(/göğüs|şınav|itiş/.test(g))target="Göğüs / itiş";else if(/sırt|barfiks|biceps|çekiş/.test(g))target="Sırt / çekiş";else if(/bacak|alt vücut/.test(g))target="Bacak";else if(/karın|core|karın kas/.test(g))target="Karın / core";
-    let names=(bodyMap[target]||bodyMap["Tüm vücut"]).slice();
-    if(style==="Kalisteniks") names=names.filter(n=>all.some(e=>e.name===n||e.name.toLocaleLowerCase("tr").includes(n.toLocaleLowerCase("tr"))));
-    if(level==="Temel") names=names.filter(n=>!/(ayak yükselterek|dip \(|barfiks$)/i.test(n));
-    if(equipment==="Ekipmansız") names=names.filter(n=>!/(barfiks|dip|hanging)/i.test(n));
-    names=[...new Set(names)].slice(0,Math.max(3,Math.min(6,Math.floor(Number(minutes)/7)||4)));
-    return {title:`${goal} · ${style}`,duration:minutes,level,notes:"Bu, bağlantı kurulana kadar çalışan yerel örnek programdır; harici yapay zekâ yanıtı değildir.",exercises:names.map((name,i)=>({name,sets:i===0?3:2,reps:level==="Temel"?10:level==="Orta"?12:8,rest:60+(i%2)*30}))};
+    const g=(goal+" "+(prompt||"")).toLocaleLowerCase("tr");let target="Tüm vücut";
+    if(/göğüs|şınav|itiş/.test(g))target="Göğüs";else if(/sırt|barfiks|çekiş|biceps/.test(g))target="Sırt ve biceps";else if(/bacak|alt vücut|kalça/.test(g))target="Bacak";else if(/karın|core/.test(g))target="Karın / core";else if(/omuz|triceps/.test(g))target="Omuz ve triceps";
+    const db={
+      "Göğüs":[["Şınav",3,[10,15,20],75,"body"],["Geniş tutuş şınav",3,[8,12,15],75,"body"],["Ayak yükselterek şınav",3,[6,10,12],90,"body"],["Dip (paralel bar)",2,[5,8,12],90,"bar"],["Dumbbell bench press",3,[8,10,12],90,"db"],["Dumbbell fly",2,[10,12,15],60,"db"],["Diz üstü şınav",2,[8,12,15],60,"body"]],
+      "Sırt ve biceps":[["Negatif barfiks",3,[3,5,6],90,"bar"],["Klasik barfiks (Pull-up)",3,[3,6,10],120,"bar"],["Ters tutuş barfiks (chin-up)",3,[4,7,10],90,"bar"],["Dumbbell row",3,[8,12,15],75,"db"],["Tek kol dumbbell row",3,[8,10,12],75,"db"],["Dumbbell biceps curl",3,[8,12,15],60,"db"]],
+      "Bacak":[["Squat",3,[12,15,20],60,"body"],["Lunge",3,[8,10,12],60,"body"],["Bulgarian split squat",3,[6,10,12],75,"body"],["Glute bridge",3,[12,15,20],60,"body"],["Calf raise",3,[12,18,25],45,"body"],["Goblet squat",3,[8,12,15],75,"db"],["Dumbbell Romanian deadlift",3,[8,10,12],90,"db"]],
+      "Karın / core":[["Plank",3,[20,35,45],45,"body"],["Side plank",2,[15,25,35],45,"body"],["Crunch",3,[12,18,25],45,"body"],["Leg raise",3,[6,10,15],60,"body"],["Mountain climber",3,[20,30,40],45,"body"]],
+      "Omuz ve triceps":[["Pike şınavı",3,[5,8,12],75,"body"],["Dumbbell shoulder press",3,[8,10,12],75,"db"],["Dumbbell lateral raise",3,[10,12,15],60,"db"],["Dar tutuş şınav",3,[6,10,15],60,"body"],["Dumbbell triceps extension",3,[8,12,15],60,"db"],["Bench dip",2,[6,10,12],75,"body"]]
+    };
+    let pool=target==="Tüm vücut"?[db["Göğüs"][0],db["Sırt ve biceps"][0],db["Bacak"][0],db["Bacak"][3],db["Karın / core"][0],db["Omuz ve triceps"][0]]:(db[target]||db["Göğüs"]).slice();
+    if(style==="Kalisteniks")pool=pool.filter(x=>x[4]==="body"||x[4]==="bar");if(style==="Fitness")pool=pool.filter(x=>x[4]==="db");
+    if(equipment==="Ekipmansız")pool=pool.filter(x=>x[4]==="body"&&!/barfiks|paralel bar/i.test(x[0]));else if(equipment==="Bar ve vücut ağırlığı")pool=pool.filter(x=>x[4]==="body"||x[4]==="bar");else if(equipment==="Dambıl ve ağırlıklar")pool=pool.filter(x=>x[4]==="db");else if(equipment==="Halkalar ve bar")pool=pool.filter(x=>x[4]==="bar"||x[4]==="body");
+    if(level==="Temel")pool=pool.filter(x=>!/(ayak yükselterek|dip \(paralel|barfiks \(pull-up\)|pike şınavı)/i.test(x[0]));
+    if(!pool.length)pool=(db[target]||db["Tüm vücut"]||db["Göğüs"]).slice(0,3);
+    const count=Number(minutes)<=20?3:Number(minutes)<=30?4:Number(minutes)<=45?5:6;pool=pool.slice(0,count);
+    const li=level==="Temel"?0:level==="İleri"?2:1;
+    return {title:target+" · "+style,duration:minutes,level,exercises:pool.map(x=>({name:x[0],sets:level==="İleri"?Math.min(4,x[1]+1):x[1],reps:x[2][li],rest:x[3]}))};
   }
-  async function generateAIWorkout(){
+  async function generateReadyWorkout(){
     const prompt=$("aiPrompt").value.trim();
     const goal=$("aiGoal").value, level=$("aiLevel").value, style=$("aiStyle").value, minutes=$("aiDuration").value, equipment=$("aiEquipment").value;
     if(!prompt && !goal){showToast("Hedefini yaz veya seç.");return;}
@@ -463,15 +473,15 @@
       let plan;
       // Yerel hazır program oluşturucu: ağ isteği/API anahtarı kullanmaz.
       plan=buildLocalPlan(goal,level,style,minutes,equipment,prompt);
-      plan.notes="Bu program Setly içindeki hazır hareket şablonlarından oluşturuldu; harici yapay zekâ kullanılmadı.";
+
       if(!plan||!Array.isArray(plan.exercises)||!plan.exercises.length)throw new Error("Programda geçerli hareket bulunamadı.");
       generatedReadyPlan={...plan,exercises:plan.exercises.filter(x=>x&&typeof x.name==="string"&&x.name.trim()).slice(0,12)};
-      $("aiPreview").innerHTML=`<div class="ai-plan-title"><strong>${safeText(generatedReadyPlan.title||"Günlük program")}</strong><span>${safeText(String(generatedReadyPlan.duration||minutes))} dakika · ${safeText(generatedReadyPlan.level||level)}</span></div><p class="ai-note">${safeText(generatedReadyPlan.notes||"Programı kontrol etmeden önce hareket ve setleri gözden geçir.")}</p>`+generatedReadyPlan.exercises.map((e,i)=>`<div class="ai-plan-row"><span class="ai-plan-number">${i+1}</span><div><strong>${safeText(e.name)}</strong><small>${Math.max(1,Number(e.sets)||3)} set × ${Math.max(1,Number(e.reps)||10)} tekrar · ${Math.max(30,Number(e.rest)||60)} sn dinlenme</small></div></div>`).join("");
+      $("aiPreview").innerHTML=`<div class="ai-plan-title"><strong>${safeText(generatedReadyPlan.title||"Günlük program")}</strong><span>${safeText(String(generatedReadyPlan.duration||minutes))} dakika · ${safeText(generatedReadyPlan.level||level)}</span></div>`+generatedReadyPlan.exercises.map((e,i)=>`<div class="ai-plan-row"><span class="ai-plan-number">${i+1}</span><div><strong>${safeText(e.name)}</strong><small>${Math.max(1,Number(e.sets)||3)} set × ${Math.max(1,Number(e.reps)||10)} tekrar · ${Math.max(30,Number(e.rest)||60)} sn dinlenme</small></div></div>`).join("");
       $("aiApply").hidden=false;
     }catch(err){showToast(err.message||"Program oluşturulamadı.");}
     finally{button.disabled=false;button.textContent="Program oluştur";}
   }
-  function applyAIWorkout(){
+  function applyReadyWorkout(){
     if(!generatedReadyPlan||dayLocked())return;
     const existing=dayList().length>0;
     if(existing){
@@ -501,11 +511,13 @@
   document.querySelectorAll(".level-chip").forEach(b=>b.addEventListener("click",()=>{activeLevel=b.dataset.level;document.querySelectorAll(".level-chip").forEach(x=>x.classList.toggle("active",x===b));renderLibrary();}));
   document.querySelectorAll(".body-chip").forEach(b=>b.addEventListener("click",()=>{activeBodyPart=b.dataset.body;document.querySelectorAll(".body-chip").forEach(x=>x.classList.toggle("active",x===b));renderLibrary();}));
   $("openReadyPrograms")?.addEventListener("click",openReadyPrograms);
-  $("aiGenerate")?.addEventListener("click",generateAIWorkout);
-  $("aiApply")?.addEventListener("click",applyAIWorkout);
+  $("aiGenerate")?.addEventListener("click",generateReadyWorkout);
+  $("aiApply")?.addEventListener("click",applyReadyWorkout);
   $("aiCancel")?.addEventListener("click",()=>$("aiDialog").close());
 
-  document.querySelectorAll(".category-chip").forEach(b=>b.addEventListener("click",()=>{activeCategory=b.dataset.category;document.querySelectorAll(".category-chip").forEach(x=>x.classList.toggle("active",x===b));renderLibrary();}));
+  document.querySelectorAll("[data-category]").forEach(b=>b.addEventListener("click",()=>{activeCategory=b.dataset.category;document.querySelectorAll("[data-category]").forEach(x=>x.classList.toggle("active",x===b));renderLibrary();}));
+  document.querySelectorAll("[data-level]").forEach(b=>b.addEventListener("click",()=>{activeLevel=b.dataset.level;document.querySelectorAll("[data-level]").forEach(x=>x.classList.toggle("active",x===b));renderLibrary();}));
+  document.querySelectorAll("[data-body]").forEach(b=>b.addEventListener("click",()=>{activeBodyPart=b.dataset.body;document.querySelectorAll("[data-body]").forEach(x=>x.classList.toggle("active",x===b));renderLibrary();}));
   $("addCustom").addEventListener("click",addCustom);$("customName").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addCustom();}});
   $("confirmAdd").addEventListener("click",()=>{
     if(!pendingExercise||dayLocked())return;

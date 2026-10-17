@@ -190,8 +190,8 @@
   </dialog>
   <dialog id="aiDialog" class="modal ai-dialog">
     <div class="modal-card ai-card">
-      <div class="modal-head"><div><div class="eyebrow">SETLY PROGRAM KÜTÜPHANESİ</div><h2>▦ Hazır Programlar</h2></div><button class="close-btn" type="button" id="aiCancel" aria-label="Kapat">×</button></div>
-      <p class="config-description">Hedefine, seviyene, sürene ve ekipmanına göre hazır bir program oluştur. Bu özellik harici yapay zekâ çağırmaz.</p>
+      <div class="modal-head"><div><div class="eyebrow">HAZIR ANTRENMAN ŞABLONLARI</div><h2>▦ Hazır Programlar</h2></div><button class="close-btn" type="button" id="aiCancel" aria-label="Kapat">×</button></div>
+      <p class="config-description">Hedefini ve antrenman koşullarını seç; sana uygun hazır programı oluştur.</p>
       <div class="ai-fields">
         <label>Hedef / kas grubu<select id="aiGoal"><option>Göğüs</option><option>Sırt ve biceps</option><option>Bacak</option><option>Karın / core</option><option>Omuz ve triceps</option><option>Tüm vücut</option><option>Serbest hedef</option></select></label>
         <label>Seviye<select id="aiLevel"><option>Temel</option><option selected>Orta</option><option>İleri</option></select></label>
@@ -202,7 +202,6 @@
       </div>
       <div class="ai-preview" id="aiPreview" aria-live="polite"></div>
       <div class="modal-actions ai-actions"><button type="button" class="secondary-btn" id="aiGenerate">Hazır program oluştur</button><button type="button" class="primary-btn" id="aiApply" hidden>Günlük plana aktar</button></div>
-      <p class="ai-footnote">Programlar uygulama içindeki hazır şablonlardan oluşturulur; harici AI servisi veya API anahtarı gerekmez.</p>
     </div>
   </dialog>
   <div class="toast" id="toast" role="status"></div>

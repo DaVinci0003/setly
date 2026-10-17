@@ -1,5 +1,5 @@
 /* Setly GitHub Pages-compatible service worker. */
-const CACHE_NAME = "setly-github-pages-v6-no-ai";
+const CACHE_NAME = "setly-ready-programs-v7";
 const APP_SCOPE = new URL("./", self.registration.scope);
 const CORE_FILES = ["./", "./index.html", "./styles.css", "./app.js", "./manifest.webmanifest", "./assets/icon.svg", "./assets/icon-192.png", "./assets/icon-512.png"].map(path => new URL(path, APP_SCOPE).href);
 self.addEventListener("install", event => { event.waitUntil((async () => { const cache = await caches.open(CACHE_NAME); await cache.addAll(CORE_FILES); await self.skipWaiting(); })()); });
