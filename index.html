@@ -31,7 +31,7 @@
           <h1>Bugün kendin için ne yaptın?</h1>
           <p>Bir tekrar, bir set, bir adım daha. Ritmini kur.</p>
         </div>
-        <button class="primary-btn add-main" id="openAdd">＋ Alıştırma ekle</button>
+        <div class="welcome-actions"><button class="secondary-btn ai-open-btn" id="openReadyPrograms">▦ Hazır Programlar</button><button class="primary-btn add-main" id="openAdd">＋ Alıştırma ekle</button></div>
       </div>
 
       <section class="stats-grid" aria-label="Günlük özet">
@@ -124,6 +124,22 @@
         <button type="button" class="category-chip" data-category="Kardiyo">Kardiyo</button>
         <button type="button" class="category-chip" data-category="Makine">Makine</button>
       </div>
+      <div class="filter-heading">Zorluk seviyesi</div>
+      <div class="category-row difficulty-row" id="levelRow">
+        <button type="button" class="category-chip level-chip active" data-level="Tümü">Tümü</button>
+        <button type="button" class="category-chip level-chip" data-level="Temel">Temel</button>
+        <button type="button" class="category-chip level-chip" data-level="Orta">Orta düzey</button>
+        <button type="button" class="category-chip level-chip" data-level="İleri">İleri düzey</button>
+      </div>
+      <div class="filter-heading">Vücut bölgesi</div>
+      <div class="category-row difficulty-row" id="bodyRow">
+        <button type="button" class="category-chip body-chip active" data-body="Tümü">Tümü</button>
+        <button type="button" class="category-chip body-chip" data-body="Göğüs / İtiş">Göğüs / itiş</button>
+        <button type="button" class="category-chip body-chip" data-body="Sırt / Çekiş">Sırt / çekiş</button>
+        <button type="button" class="category-chip body-chip" data-body="Bacak">Bacak</button>
+        <button type="button" class="category-chip body-chip" data-body="Karın / Core">Karın / core</button>
+        <button type="button" class="category-chip body-chip" data-body="Diğer">Diğer</button>
+      </div>
       <div class="exercise-results" id="exerciseResults"></div>
       <div class="custom-exercise">
         <label for="customName">Listede yok mu? Kendi hareketini ekle</label>
@@ -171,6 +187,23 @@
       <div id="groupPreview" class="group-preview"></div>
       <div class="modal-actions"><button type="button" class="secondary-btn" id="cancelGroup">Vazgeç</button><button type="button" class="primary-btn" id="confirmGroupSave">Kaydet</button></div>
     </form>
+  </dialog>
+  <dialog id="aiDialog" class="modal ai-dialog">
+    <div class="modal-card ai-card">
+      <div class="modal-head"><div><div class="eyebrow">SETLY PROGRAM KÜTÜPHANESİ</div><h2>▦ Hazır Programlar</h2></div><button class="close-btn" type="button" id="aiCancel" aria-label="Kapat">×</button></div>
+      <p class="config-description">Hedefine, seviyene, sürene ve ekipmanına göre hazır bir program oluştur. Bu özellik harici yapay zekâ çağırmaz.</p>
+      <div class="ai-fields">
+        <label>Hedef / kas grubu<select id="aiGoal"><option>Göğüs</option><option>Sırt ve biceps</option><option>Bacak</option><option>Karın / core</option><option>Omuz ve triceps</option><option>Tüm vücut</option><option>Serbest hedef</option></select></label>
+        <label>Seviye<select id="aiLevel"><option>Temel</option><option selected>Orta</option><option>İleri</option></select></label>
+        <label>Antrenman türü<select id="aiStyle"><option>Kalisteniks</option><option>Fitness</option><option>Karışık</option></select></label>
+        <label>Süre<select id="aiDuration"><option value="15">15–20 dakika</option><option value="30" selected>30–45 dakika</option><option value="45">45–60 dakika</option><option value="60">60+ dakika</option></select></label>
+        <label class="ai-full">Ekipman<select id="aiEquipment"><option>Bar ve vücut ağırlığı</option><option>Ekipmansız</option><option>Dambıl ve ağırlıklar</option><option>Tam donanımlı spor salonu</option><option>Halkalar ve bar</option></select></label>
+        <label class="ai-full">Program notu (isteğe bağlı)<textarea id="aiPrompt" rows="3" placeholder="Örn. Daha çok göğüs çalışmak istiyorum."></textarea></label>
+      </div>
+      <div class="ai-preview" id="aiPreview" aria-live="polite"></div>
+      <div class="modal-actions ai-actions"><button type="button" class="secondary-btn" id="aiGenerate">Hazır program oluştur</button><button type="button" class="primary-btn" id="aiApply" hidden>Günlük plana aktar</button></div>
+      <p class="ai-footnote">Programlar uygulama içindeki hazır şablonlardan oluşturulur; harici AI servisi veya API anahtarı gerekmez.</p>
+    </div>
   </dialog>
   <div class="toast" id="toast" role="status"></div>
   <script src="app.js"></script>

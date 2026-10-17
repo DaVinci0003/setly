@@ -17,11 +17,53 @@
     ["Bench press","Barbell","🏋️","strength"],["Incline bench press","Barbell","🏋️","strength"],["Deadlift","Barbell","🏋️","strength"],["Romanian deadlift","Barbell","🏋️","strength"],["Barbell squat","Barbell","🦵","strength"],["Front squat","Barbell","🦵","strength"],["Overhead press","Barbell","🏋️","strength"],["Barbell row","Barbell","🏋️","strength"],["Hip thrust","Barbell","🦵","strength"],["Barbell curl","Barbell","💪","strength"],["Skull crusher","Barbell","💪","strength"],
     ["Koşu","Kardiyo","🏃","cardio"],["Yürüyüş","Kardiyo","🚶","cardio"],["Bisiklet","Kardiyo","🚴","cardio"],["Kürek ergometresi","Kardiyo","🚣","cardio"],["İp atlama","Kardiyo","⚡","cardio"],["Eliptik bisiklet","Kardiyo","🚴","cardio"],["Merdiven çıkma","Kardiyo","🪜","cardio"],["Yüzme","Kardiyo","🏊","cardio"],
     ["Lat pulldown","Makine","🏋️","strength"],["Seated cable row","Makine","🏋️","strength"],["Leg press","Makine","🦵","strength"],["Leg extension","Makine","🦵","strength"],["Leg curl","Makine","🦵","strength"],["Chest press makinesi","Makine","🏋️","strength"],["Pec deck","Makine","🏋️","strength"],["Cable crossover","Makine","🏋️","strength"],["Triceps pushdown","Makine","💪","strength"],["Cable face pull","Makine","🏋️","strength"],["Smith machine squat","Makine","🦵","strength"],["Assisted pull-up","Makine","🧗","strength"]
-  ].map(([name,category,icon,type])=>({name,category,icon,type}));
+  ].map(([name,category,icon,type])=>({name,category,icon,type,level: inferLevel(name),bodyPart: inferBodyPart(name)}));
+
+  function inferLevel(name){
+    const n=name.toLocaleLowerCase("tr");
+    if(/muscle.?up|planche|tek kol|one.?arm|front lever|back lever|human flag|handstand push|typewriter|archer|poseidon|russian push|tek kol|dragon flag|tek el/.test(n)) return "İleri";
+    if(/negatif|eğimli|ayak yükselterek|wide|geniş tutuş|dar tutuş|elmas|diamond|decline|incline|dips|dip \(|chin-up|ters tutuş|commando|explosive|patlayıcı|alkış|hindu|dive bomber|pike|l-sit|sternum|weighted|ağırlıklı|ring|halka|assisted|destekli|archer|pseudo-planche|bulgarian|pistol|shrimp|nordic/.test(n)) return "Orta";
+    return "Temel";
+  }
+  function inferBodyPart(name){
+    const n=name.toLocaleLowerCase("tr");
+    if(/şınav|push.?up|dip|planche|handstand/.test(n)) return "Göğüs / İtiş";
+    if(/barfiks|pull.?up|chin.?up|muscle.?up|lever|row|commando|scapular/.test(n)) return "Sırt / Çekiş";
+    if(/squat|lunge|bacak|calf|hamstring|nordic|glute|leg press|leg extension|leg curl/.test(n)) return "Bacak";
+    if(/plank|mekik|crunch|leg raise|dragon flag|hollow|mountain climber|windshield|l-sit|toes-to-bar/.test(n)) return "Karın / Core";
+    if(/koşu|yürüyüş|bisiklet|kürek|ip atlama|eliptik|merdiven|yüzme/.test(n)) return "Kardiyo";
+    return "Diğer";
+  }
+  const calisthenicsCatalog = [
+    ["Diz üstü şınav","Temel","Göğüs / İtiş","💪"],["Duvara şınav","Temel","Göğüs / İtiş","💪"],["Dar tutuş şınav","Temel","Göğüs / İtiş","💪"],
+    ["Geniş tutuş şınav","Temel","Göğüs / İtiş","💪"],["Elmas şınav (Diamond push-up)","Orta","Göğüs / İtiş","💎"],["Archer şınav","İleri","Göğüs / İtiş","🏹"],
+    ["Tek kol şınav","İleri","Göğüs / İtiş","💪"],["Alkış şınavı (Clap push-up)","İleri","Göğüs / İtiş","👏"],["Patlayıcı şınav","İleri","Göğüs / İtiş","⚡"],
+    ["Hindu şınavı","Orta","Göğüs / İtiş","💪"],["Dive bomber şınavı","Orta","Göğüs / İtiş","💪"],["Pike şınavı","Orta","Göğüs / İtiş","🔺"],
+    ["Ayak yükselterek şınav","Orta","Göğüs / İtiş","💪"],["Pseudo-planche şınavı","İleri","Göğüs / İtiş","🤸"],["Planche şınavı","İleri","Göğüs / İtiş","🤸"],
+    ["Russian push-up","İleri","Göğüs / İtiş","💪"],["Poseidon push-up (varyasyon doğrulanmalı)","İleri","Göğüs / İtiş","💪"],
+    ["Klasik barfiks (Pull-up)","Temel","Sırt / Çekiş","🧗"],["Negatif barfiks","Temel","Sırt / Çekiş","🧗"],["Bant destekli barfiks","Temel","Sırt / Çekiş","🧗"],
+    ["Ters tutuş barfiks (Chin-up)","Temel","Sırt / Çekiş","🧗"],["Dar tutuş barfiks","Orta","Sırt / Çekiş","🧗"],["Geniş tutuş barfiks","Orta","Sırt / Çekiş","🧗"],
+    ["Nötr tutuş barfiks","Orta","Sırt / Çekiş","🧗"],["Commando pull-up","Orta","Sırt / Çekiş","🧗"],["Scapular pull-up","Temel","Sırt / Çekiş","🧗"],
+    ["Archer pull-up","İleri","Sırt / Çekiş","🏹"],["Typewriter pull-up","İleri","Sırt / Çekiş","🧗"],["L-sit pull-up","İleri","Sırt / Çekiş","🧗"],
+    ["Chest-to-bar pull-up","İleri","Sırt / Çekiş","🧗"],["Explosive pull-up","İleri","Sırt / Çekiş","⚡"],["Tek kol destekli barfiks","İleri","Sırt / Çekiş","🧗"],
+    ["Tek kol barfiks","İleri","Sırt / Çekiş","🧗"],["Muscle-up","İleri","Sırt / Çekiş","🔥"],["Strict muscle-up","İleri","Sırt / Çekiş","🔥"],
+    ["Negatif muscle-up","İleri","Sırt / Çekiş","🔥"],["Dip (paralel bar)","Temel","Göğüs / İtiş","💪"],["Straight-bar dip","Orta","Göğüs / İtiş","💪"],
+    ["Russian dip","İleri","Göğüs / İtiş","💪"],["Bench dip","Temel","Göğüs / İtiş","💪"],["Ring push-up","Orta","Göğüs / İtiş","⭕"],
+    ["Ring dip","İleri","Göğüs / İtiş","⭕"],["Front lever tuck hold","Orta","Sırt / Çekiş","🤸"],["Front lever","İleri","Sırt / Çekiş","🤸"],
+    ["Back lever","İleri","Sırt / Çekiş","🤸"],["Human flag","İleri","Core / Beceri","🤸"],["Handstand hold","Orta","Omuz / Beceri","🤸"],
+    ["Handstand push-up","İleri","Omuz / Beceri","🤸"],["L-sit hold","Orta","Karın / Core","🔥"],["Hollow body hold","Temel","Karın / Core","🔥"],
+    ["Hanging knee raise","Temel","Karın / Core","🔥"],["Hanging leg raise","Orta","Karın / Core","🔥"],["Toes-to-bar","İleri","Karın / Core","🔥"],
+    ["Dragon flag","İleri","Karın / Core","🔥"],["Pistol squat","İleri","Bacak","🦵"],["Shrimp squat","İleri","Bacak","🦵"],
+    ["Jump squat","Orta","Bacak","🦵"],["Nordic hamstring curl","İleri","Bacak","🦵"],["Ring row","Temel","Sırt / Çekiş","⭕"]
+  ].map(([name,level,bodyPart,icon])=>({name,category:"Vücut ağırlığı",icon,type:"strength",level,bodyPart,aliases:"",calisthenics:true}));
+  const knownNames = new Set(library.map(e=>e.name.toLocaleLowerCase("tr")));
+  calisthenicsCatalog.forEach(e=>{if(!knownNames.has(e.name.toLocaleLowerCase("tr"))) library.push(e);});
 
   let state = loadState();
   let selectedDate = todayISO();
   let activeCategory = "Tümü";
+  let activeLevel = "Tümü";
+  let activeBodyPart = "Tümü";
   let pendingExercise = null;
   let editingId = null;
   let toastTimer = null;
@@ -324,18 +366,27 @@
     $("weekSummary").textContent=`${finished} gün tamamlandı`;
   }
   function openAdd(){
-    $("exerciseSearch").value="";activeCategory="Tümü";
+    $("exerciseSearch").value="";activeCategory="Tümü";activeLevel="Tümü";activeBodyPart="Tümü";
     document.querySelectorAll(".category-chip").forEach(b=>b.classList.toggle("active",b.dataset.category===activeCategory));
+    document.querySelectorAll(".level-chip").forEach(b=>b.classList.toggle("active",b.dataset.level===activeLevel));
+    document.querySelectorAll(".body-chip").forEach(b=>b.classList.toggle("active",b.dataset.body===activeBodyPart));
     renderLibrary();$("addDialog").showModal();setTimeout(()=>$("exerciseSearch").focus(),60);
   }
   function renderLibrary(){
     const q=$("exerciseSearch").value.trim().toLocaleLowerCase("tr");
-    const list=library.filter(e=>(activeCategory==="Tümü"||e.category===activeCategory)&&(!q||e.name.toLocaleLowerCase("tr").includes(q)||e.category.toLocaleLowerCase("tr").includes(q)));
+    const list=library.filter(e=>{
+      const aliases=(e.aliases||"").toLocaleLowerCase("tr");
+      return (activeCategory==="Tümü"||e.category===activeCategory) &&
+        (activeLevel==="Tümü"||(e.level||"Temel")===activeLevel) &&
+        (activeBodyPart==="Tümü"||(e.bodyPart||"Diğer")===activeBodyPart) &&
+        (!q||e.name.toLocaleLowerCase("tr").includes(q)||e.category.toLocaleLowerCase("tr").includes(q)||aliases.includes(q)||(e.bodyPart||"").toLocaleLowerCase("tr").includes(q));
+    });
     $("exerciseResults").innerHTML="";
-    if(!list.length){$("exerciseResults").innerHTML='<div class="no-results">Hareket bulunamadı. Aşağıdan kendi hareketini ekleyebilirsin.</div>';return;}
+    if(!list.length){$("exerciseResults").innerHTML='<div class="no-results">Bu filtrelerde hareket bulunamadı. Arama veya seviye seçimini değiştirebilirsin.</div>';return;}
     list.forEach(e=>{
       const b=document.createElement("button");b.type="button";b.className="exercise-result";
-      b.innerHTML=`<span class="result-icon">${safeText(e.icon)}</span><span class="result-copy"><span class="result-name">${safeText(e.name)}</span><span class="result-category">${safeText(e.category)}</span></span><span class="result-add">＋</span>`;
+      const level=e.level||"Temel", body=e.bodyPart||e.category;
+      b.innerHTML=`<span class="result-icon">${safeText(e.icon)}</span><span class="result-copy"><span class="result-name">${safeText(e.name)}</span><span class="result-category">${safeText(body)} · ${safeText(level)}</span></span><span class="result-add">＋</span>`;
       b.addEventListener("click",()=>openConfig(e));$("exerciseResults").appendChild(b);
     });
   }
@@ -384,6 +435,62 @@
     const template={name,category:"Kişisel",icon:"🏋️",type:"strength"};
     $("customName").value="";openConfig(template);
   }
+  let generatedReadyPlan = null;
+  function openReadyPrograms(){
+    if(dayLocked()){showToast("Bugün tamamlandı; yeni program eklenemez.");return;}
+    $("aiPrompt").value="";$("aiPreview").innerHTML="";$("aiApply").hidden=true;
+    $("aiDialog").showModal();
+  }
+  function buildLocalPlan(goal,level,style,minutes,equipment,prompt){
+    const all=library.filter(e=>e.type==="strength" && (e.level||"Temel")!=="İleri");
+    const bodyMap={"Göğüs / itiş":["Şınav","Geniş tutuş şınav","Ayak yükselterek şınav","Dip (paralel bar)"],"Sırt / çekiş":["Barfiks","Negatif barfiks","Ters tutuş barfiks (chin-up)","Scapular pull-up"],"Bacak":["Squat","Lunge","Bulgarian split squat","Calf raise"],"Karın / core":["Plank","Side plank","Leg raise","Hanging knee raise"],"Tüm vücut":["Şınav","Squat","Barfiks","Plank","Lunge"]};
+    let target="Tüm vücut";const g=goal.toLocaleLowerCase("tr");
+    if(/göğüs|şınav|itiş/.test(g))target="Göğüs / itiş";else if(/sırt|barfiks|biceps|çekiş/.test(g))target="Sırt / çekiş";else if(/bacak|alt vücut/.test(g))target="Bacak";else if(/karın|core|karın kas/.test(g))target="Karın / core";
+    let names=(bodyMap[target]||bodyMap["Tüm vücut"]).slice();
+    if(style==="Kalisteniks") names=names.filter(n=>all.some(e=>e.name===n||e.name.toLocaleLowerCase("tr").includes(n.toLocaleLowerCase("tr"))));
+    if(level==="Temel") names=names.filter(n=>!/(ayak yükselterek|dip \(|barfiks$)/i.test(n));
+    if(equipment==="Ekipmansız") names=names.filter(n=>!/(barfiks|dip|hanging)/i.test(n));
+    names=[...new Set(names)].slice(0,Math.max(3,Math.min(6,Math.floor(Number(minutes)/7)||4)));
+    return {title:`${goal} · ${style}`,duration:minutes,level,notes:"Bu, bağlantı kurulana kadar çalışan yerel örnek programdır; harici yapay zekâ yanıtı değildir.",exercises:names.map((name,i)=>({name,sets:i===0?3:2,reps:level==="Temel"?10:level==="Orta"?12:8,rest:60+(i%2)*30}))};
+  }
+  async function generateAIWorkout(){
+    const prompt=$("aiPrompt").value.trim();
+    const goal=$("aiGoal").value, level=$("aiLevel").value, style=$("aiStyle").value, minutes=$("aiDuration").value, equipment=$("aiEquipment").value;
+    if(!prompt && !goal){showToast("Hedefini yaz veya seç.");return;}
+    
+    const button=$("aiGenerate");button.disabled=true;button.textContent="Program hazırlanıyor…";
+    try{
+      let plan;
+      // Yerel hazır program oluşturucu: ağ isteği/API anahtarı kullanmaz.
+      plan=buildLocalPlan(goal,level,style,minutes,equipment,prompt);
+      plan.notes="Bu program Setly içindeki hazır hareket şablonlarından oluşturuldu; harici yapay zekâ kullanılmadı.";
+      if(!plan||!Array.isArray(plan.exercises)||!plan.exercises.length)throw new Error("Programda geçerli hareket bulunamadı.");
+      generatedReadyPlan={...plan,exercises:plan.exercises.filter(x=>x&&typeof x.name==="string"&&x.name.trim()).slice(0,12)};
+      $("aiPreview").innerHTML=`<div class="ai-plan-title"><strong>${safeText(generatedReadyPlan.title||"Günlük program")}</strong><span>${safeText(String(generatedReadyPlan.duration||minutes))} dakika · ${safeText(generatedReadyPlan.level||level)}</span></div><p class="ai-note">${safeText(generatedReadyPlan.notes||"Programı kontrol etmeden önce hareket ve setleri gözden geçir.")}</p>`+generatedReadyPlan.exercises.map((e,i)=>`<div class="ai-plan-row"><span class="ai-plan-number">${i+1}</span><div><strong>${safeText(e.name)}</strong><small>${Math.max(1,Number(e.sets)||3)} set × ${Math.max(1,Number(e.reps)||10)} tekrar · ${Math.max(30,Number(e.rest)||60)} sn dinlenme</small></div></div>`).join("");
+      $("aiApply").hidden=false;
+    }catch(err){showToast(err.message||"Program oluşturulamadı.");}
+    finally{button.disabled=false;button.textContent="Program oluştur";}
+  }
+  function applyAIWorkout(){
+    if(!generatedReadyPlan||dayLocked())return;
+    const existing=dayList().length>0;
+    if(existing){
+      const choice=prompt("Bugünkü planında zaten hareketler var. Mevcut plana eklemek için EKLE, bugünkü planı değiştirmek için DEGISTIR yaz.");
+      if(!choice)return;
+      const normalized=choice.trim().toLocaleUpperCase("tr");
+      if(normalized!=="EKLE"&&normalized!=="DEGISTIR"){showToast("İşlem iptal edildi. EKLE veya DEGISTIR yaz.");return;}
+      if(normalized==="DEGISTIR"&&!confirm("Bugünkü antrenman listesini değiştirmek istiyor musun? Bu işlem yalnızca bugünün listesini değiştirir; kayıtlı grupları silmez."))return;
+      if(normalized==="DEGISTIR")state.days[selectedDate]=[];
+    }
+    let added=0;
+    generatedReadyPlan.exercises.forEach(item=>{
+      const template=library.find(e=>e.name.toLocaleLowerCase("tr")===item.name.toLocaleLowerCase("tr"))||{name:item.name,category:"Vücut ağırlığı",icon:"💪",type:"strength",level:"Temel"};
+      const duplicate=dayList().some(e=>e.name.toLocaleLowerCase("tr")===template.name.toLocaleLowerCase("tr"));
+      if(!duplicate){addExercise(template,{pinned:false,mode:"fixed",sets:Math.max(1,Math.min(30,Number(item.sets)||3)),reps:Math.max(1,Math.min(1000,Number(item.reps)||10))});added++;}
+    });
+    $("aiDialog").close();render();showToast(added?`${added} hareket günlük plana eklendi.`:"Bu hareketler zaten günlük planında var.");
+  }
+
   function finishWorkout(){
     if(dayLocked()||progress()<100)return;
     state.completedDays[selectedDate]=true;save();render();
@@ -391,6 +498,13 @@
   }
   $("openAdd").addEventListener("click",openAdd);$("emptyAdd").addEventListener("click",openAdd);
   $("exerciseSearch").addEventListener("input",renderLibrary);
+  document.querySelectorAll(".level-chip").forEach(b=>b.addEventListener("click",()=>{activeLevel=b.dataset.level;document.querySelectorAll(".level-chip").forEach(x=>x.classList.toggle("active",x===b));renderLibrary();}));
+  document.querySelectorAll(".body-chip").forEach(b=>b.addEventListener("click",()=>{activeBodyPart=b.dataset.body;document.querySelectorAll(".body-chip").forEach(x=>x.classList.toggle("active",x===b));renderLibrary();}));
+  $("openReadyPrograms")?.addEventListener("click",openReadyPrograms);
+  $("aiGenerate")?.addEventListener("click",generateAIWorkout);
+  $("aiApply")?.addEventListener("click",applyAIWorkout);
+  $("aiCancel")?.addEventListener("click",()=>$("aiDialog").close());
+
   document.querySelectorAll(".category-chip").forEach(b=>b.addEventListener("click",()=>{activeCategory=b.dataset.category;document.querySelectorAll(".category-chip").forEach(x=>x.classList.toggle("active",x===b));renderLibrary();}));
   $("addCustom").addEventListener("click",addCustom);$("customName").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addCustom();}});
   $("confirmAdd").addEventListener("click",()=>{

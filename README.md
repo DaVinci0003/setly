@@ -1,14 +1,17 @@
-# Setly — Günlük Set Performans Grafiği (GitHub Pages)
+# Setly — Hazır Programlar ve Kalisteniks Hareket Kütüphanesi (AI yok)
 
-Bu ZIP, `https://davinci0003.github.io/setly/` gibi bir GitHub Pages proje yoluna göre hazırlanmıştır.
+Bu sürümde harici yapay zekâ servisi, API anahtarı veya AI worker yoktur. Program oluşturma, uygulama içindeki hazır hareket şablonlarıyla yerel olarak yapılır.
 
-## Yükleme
-1. ZIP'i çıkar.
-2. İçindeki `index.html`, `app.js`, `styles.css`, `manifest.webmanifest`, `sw.js` dosyalarını ve `assets` klasörünü mevcut `setly` deposunun köküne yükle/üzerine yaz.
-3. GitHub Pages dağıtımı tamamlandıktan sonra sitede bilgisayarda `Ctrl + Shift + R` yap.
-4. Setly'yi aç, bir hareket kartında bir sete tekrar sayısı gir ve o setin yanındaki `+` düğmesine bas. Grafik, o harekete ait kaydedilmiş setlerin altında görünür.
+## GitHub Pages'e yükleme
+1. Mevcut Setly deposunun yedeğini al.
+2. ZIP'i çıkarıp içindeki dosyaları Setly deposunun köküne yükle/üzerine yaz; `assets` klasörünü de ekle.
+3. GitHub Pages dağıtımının tamamlanmasını bekle.
+4. Siteyi yenileyip hareket kütüphanesini, hazır programları ve mevcut set/tekrar grafiklerini kontrol et.
 
-## Grafik davranışı
-Her hareketin kendi grafiği vardır. Grafik yalnızca seçili günün o hareketine ait set tekrarlarını gösterir; başka hareketlere veya genel istatistiklere eklenmez. Değer kaydedildiğinde grafik güncellenir. Yeni güne geçince yalnızca o günün verisi görünür.
+## İçerik
+- Kalisteniks hareket kütüphanesi; arama, kas bölgesi ve seviye filtreleri.
+- Hazır şablonlardan yerel program oluşturma ve günlük plana aktarma.
+- Günlük set/tekrar takibi, kayıtlı antrenmanlar ve performans grafikleri korunacak şekilde temel alınmıştır.
+- Gerçek AI entegrasyonu bu pakette bulunmaz.
 
-Önceki `setly` verileri için kullanılan `setly-workout-v1` kayıt anahtarı korunmuştur.
+Not: Paket canlı GitHub Pages ortamında test edilmemiştir. Yüklemeden önce mevcut dosyalarını yedekle ve dağıtımdan sonra uygulamayı kontrol et.

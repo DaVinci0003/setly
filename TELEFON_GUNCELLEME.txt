@@ -1,9 +1,1 @@
-SETLY — ÇİZGİLİ GRAFİK TELEFON GÜNCELLEME PAKETİ
-
-1. ZIP'i bilgisayarda çıkar.
-2. İçindeki dosya ve assets klasörünü GitHub deposunun setly/ köküne yükle; mevcut dosyaların üzerine yaz.
-3. GitHub Pages dağıtımının bitmesini bekle.
-4. Telefonda Chrome'da https://davinci0003.github.io/setly/ adresini yeniden aç.
-
-Bu pakette service worker önbellek sürümü yükseltildi ve statik dosyalar için ağdan güncel sürümü alma önceliklendirildi.
-Bu adımlar Chrome'un tüm tarama verilerini temizlemez ve uygulamanın localStorage kayıtlarını silmek için kod içermez.
+Telefon testi: GitHub Pages dağıtımı tamamlandıktan sonra Setly sayfasını açıp yenileyin. Service worker önbelleği v6-no-ai olarak güncellendi. Tarayıcı verilerini temizlemek gerekmez.
