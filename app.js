@@ -74,10 +74,7 @@
   function loadState(){
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if(raw){const parsed=JSON.parse(raw); if(parsed && parsed.days && parsed.pinned) { if(!Array.isArray(parsed.savedGroups)) parsed.savedGroups=[];
-        // Eski sürümde kaydedilmiş toplam-hedef hareketlerini de yeni set düzenine taşı.
-        Object.values(parsed.days).forEach(day=>(day||[]).forEach(e=>{if(e.mode==="flex"){e.targetReps=Math.max(1,Number(e.targetReps)||100);if(!Array.isArray(e.setProgress)||!e.setProgress.length)e.setProgress=[{actual:0,done:false}];e.setProgress.forEach(p=>{p.actual=Math.max(0,Number(p.actual)||0);p.done=!!p.done;});const total=e.setProgress.reduce((n,p)=>n+p.actual,0);if(total<e.targetReps && e.setProgress.every(p=>p.done))e.setProgress.push({actual:0,done:false});}}));
-        return parsed; }}
+      if(raw){const parsed=JSON.parse(raw); if(parsed && parsed.days && parsed.pinned) { if(!Array.isArray(parsed.savedGroups)) parsed.savedGroups=[]; return parsed; }}
     } catch(e) {}
     return {days:{},pinned:[],completedDays:{},savedGroups:[]};
   }
@@ -153,7 +150,11 @@
     if(dayLocked())return;
     const e=findExercise(exId);if(!e)return;
     const n=Math.max(0,Math.min(100000,Number(value)||0));
-    e.setProgress[index].actual=n;save();render();
+    // Mobile fix: when the user taps the + button, the input first blurs.
+    // Do not rebuild the card here: doing so removes the tapped button before
+    // its click handler fires on touch devices. The following + click will
+    // save the set and render the next one.
+    e.setProgress[index].actual=n;save();
   }
   function markSet(exId,index,done){
     if(dayLocked())return;
@@ -168,15 +169,16 @@
     const input=$(`actual-${exId}-${index}`);
     const value=Math.max(0,Number(input?.value)||0);
     if(!value){showToast("Kaydetmek için tekrar sayısını yaz.");input?.focus();return;}
+    if(!Array.isArray(e.setProgress))e.setProgress=[];
+    while(e.setProgress.length<=index)e.setProgress.push({actual:0,done:false});
     const p=e.setProgress[index];p.actual=value;p.done=true;
     if(e.mode==="flex"){
-      // Toplam tekrar hedefinde her kaydedilen set korunur; hedef dolana kadar
-      // listenin sonunda daima yeni, boş bir set hazır bulunur.
+      // Keep every completed set and always append the next empty set
+      // until the cumulative target is reached.
       const target=Math.max(1,Number(e.targetReps)||1);
       const total=flexTotal(e);
-      const lastSet=e.setProgress[e.setProgress.length-1];
-      // Her kayıttan sonra, hedef tamamlanmadıysa sıradaki boş seti mutlaka göster.
-      if(total<target && (!lastSet || lastSet.done))e.setProgress.push({actual:0,done:false});
+      const hasOpenSet=e.setProgress.some(set=>!set.done);
+      if(total<target && !hasOpenSet)e.setProgress.push({actual:0,done:false});
     }
     save();render();showToast(`${index+1}. set: ${value} tekrar kaydedildi.`);
   }
@@ -575,17 +577,9 @@
     window.addEventListener("load", () => {
       const swUrl = new URL("./sw.js", location.href);
       const appScope = new URL("./", location.href).pathname;
-      navigator.serviceWorker.register(swUrl.href, { scope: appScope, updateViaCache: "none" }).then(reg => {
-        reg.update().catch(() => {});
-      }).catch(() => {
+      navigator.serviceWorker.register(swUrl.href, { scope: appScope }).catch(() => {
         // The app remains usable online even if offline support cannot be registered.
       });
-    });
-  }
-  if ("serviceWorker" in navigator) {
-    let refreshedForWorker = false;
-    navigator.serviceWorker.addEventListener("controllerchange", () => {
-      if (!refreshedForWorker) { refreshedForWorker = true; location.reload(); }
     });
   }
   render();

@@ -1,1 +1,5 @@
-GitHub Pages dağıtımı tamamlandıktan sonra siteyi normal şekilde yenileyin. Önbellek sürümü güncellendi; tarayıcı verilerini temizlemeyin.
+MOBİL TOPLAM TEKRAR DÜZELTMESİ v9
+
+ZIP içeriğini depo kök dizinine yükleyip mevcut dosyaların üzerine yazın. GitHub Actions tamamlanınca telefonda Setly uygulamasını tamamen kapatın, Chrome üzerinden siteyi bir kez açıp yenileyin ve uygulamayı tekrar başlatın. Chrome verilerini veya uygulama depolamasını temizlemeyin.
+
+Düzeltme: Mobilde giriş alanının blur/change olayı + düğmesine tıklanmadan ekranı yeniden oluşturmuyor. Böylece set kaydı tetikleniyor ve hedef dolmadıysa yeni boş set ekleniyor.
