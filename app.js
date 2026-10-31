@@ -166,7 +166,14 @@
     const value=Math.max(0,Number(input?.value)||0);
     if(!value){showToast("Kaydetmek için tekrar sayısını yaz.");input?.focus();return;}
     const p=e.setProgress[index];p.actual=value;p.done=true;
-    if(e.mode==="flex" && flexTotal(e)<(Number(e.targetReps)||1))e.setProgress.push({actual:0,done:false});
+    if(e.mode==="flex"){
+      // Toplam tekrar hedefinde her kaydedilen set korunur; hedef dolana kadar
+      // listenin sonunda daima yeni, boş bir set hazır bulunur.
+      const target=Math.max(1,Number(e.targetReps)||1);
+      const total=flexTotal(e);
+      const hasOpenSet=e.setProgress.some(set=>!set.done);
+      if(total<target && !hasOpenSet)e.setProgress.push({actual:0,done:false});
+    }
     save();render();showToast(`${index+1}. set: ${value} tekrar kaydedildi.`);
   }
   function toggleCardio(exId){
