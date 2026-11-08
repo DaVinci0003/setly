@@ -1,10 +1,13 @@
-# Setly — Hazır Programlar ve Filtre Düzeltmesi
+# Setly — Aylık tekrar sıralaması
 
-- Ekipman, zorluk ve vücut bölgesi filtreleri artık birbirinden bağımsız çalışır; üçünden aynı anda seçim yapılabilir.
-- Hareket araması ad, ekipman, seviye ve kas bölgesini kapsar.
-- Hareket kütüphanesindeki mevcut hareketlere tutarlı ekipman/seviye/bölge sınıflandırması uygulanır.
-- Hazır programlardaki AI/harici servis açıklamaları kaldırıldı; program şablonları hedef, seviye, süre, antrenman türü ve ekipmana göre iyileştirildi.
-- Günlük set/tekrar takibi, kayıtlı antrenmanlar ve grafikler korunmuştur.
-- Önbellek sürümü güncellendi; tarayıcı verilerini temizlemeyin.
+Bu sürüm, mevcut Setly verilerini (`setly-workout-v1`) koruyarak ana ekrana “Bu Ay En Çok Yaptıklarım” sıralaması ekler.
 
-Kurulum: Yedek al, ZIP'i çıkar, içindekileri GitHub deposunun köküne yükle ve Pages dağıtımı tamamlanınca test et. Canlı telefonda henüz test edilmedi.
+- İçinde bulunulan ayın kayıtlarını toplar.
+- Aynı isimdeki hareketlerin farklı günlerdeki set tekrarlarını birleştirir.
+- Hareketleri toplam tekrar sayısına göre büyükten küçüğe sıralar.
+- Sıralama her uygulama çiziminde güncellenir; yeni tekrar kaydedilince liste de güncellenir.
+- Kardiyo süre/mesafeleri tekrar sayısı olmadığı için bu listede gösterilmez.
+- Eski ayların kayıtları silinmez; yalnızca mevcut ayın toplamına katılmaz.
+
+## Kurulum
+ZIP içindeki dosyaları GitHub Pages deposunun ana dizinine yükleyip eskilerin üzerine yazın. Actions/Pages dağıtımı tamamlandıktan sonra telefonda Setly'yi kapatın, Chrome'da siteyi açıp yenileyin ve uygulamayı yeniden açın. Tarayıcı veya uygulama verilerini temizlemeyin.

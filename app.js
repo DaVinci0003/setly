@@ -272,7 +272,7 @@
       if(locked)card.querySelectorAll("button,input").forEach(control=>control.disabled=true);
       $("workoutList").appendChild(card);
     });
-    renderStats();renderDistribution();renderWeek();renderSavedGroups();
+    renderStats();renderDistribution();renderMonthlyLeaderboard();renderWeek();renderSavedGroups();
     const p=progress();
     const finishedToday=dayLocked();
     $("finishBtn").disabled=finishedToday||p<100;
@@ -364,6 +364,43 @@
       row.innerHTML=`<div class="dist-name" title="${safeText(x.name)}">${safeText(x.name)}</div><div class="dist-track"><div class="dist-fill" style="width:${pct}%"></div></div><div class="dist-pct">${pct}%</div>`;
       $("distribution").appendChild(row);
     });
+  }
+  let monthlyLeaderboardSelectedMonth = null;
+  function renderMonthlyLeaderboard(){
+    const now=todayISO();
+    const currentMonth=now.slice(0,7);
+    const knownMonths=new Set([currentMonth]);
+    Object.keys(state.days||{}).forEach(date=>{if(/^\d{4}-\d{2}-\d{2}$/.test(date)&&date<=now)knownMonths.add(date.slice(0,7));});
+    const months=[...knownMonths].sort((a,b)=>a.localeCompare(b));
+    const earliest=months[0]||currentMonth;
+    if(!monthlyLeaderboardSelectedMonth || monthlyLeaderboardSelectedMonth>currentMonth) monthlyLeaderboardSelectedMonth=currentMonth;
+    if(monthlyLeaderboardSelectedMonth<earliest) monthlyLeaderboardSelectedMonth=earliest;
+    const month=monthlyLeaderboardSelectedMonth;
+    const prev=$("monthlyMonthPrev"), next=$("monthlyMonthNext");
+    if(prev&&!prev.dataset.bound){prev.addEventListener("click",()=>{const d=new Date(monthlyLeaderboardSelectedMonth+"-15T12:00:00");d.setMonth(d.getMonth()-1);monthlyLeaderboardSelectedMonth=d.toISOString().slice(0,7);renderMonthlyLeaderboard();});prev.dataset.bound="1";}
+    if(next&&!next.dataset.bound){next.addEventListener("click",()=>{const d=new Date(monthlyLeaderboardSelectedMonth+"-15T12:00:00");d.setMonth(d.getMonth()+1);const candidate=d.toISOString().slice(0,7);if(candidate<=currentMonth){monthlyLeaderboardSelectedMonth=candidate;renderMonthlyLeaderboard();}});next.dataset.bound="1";}
+    const label=new Date(month+"-15T12:00:00").toLocaleDateString("tr-TR",{month:"long",year:"numeric"});
+    const labelEl=$("monthlyLeaderboardMonthLabel"); if(labelEl)labelEl.textContent=label.charAt(0).toLocaleUpperCase("tr-TR")+label.slice(1);
+    if(prev)prev.disabled=month<=earliest;
+    if(next)next.disabled=month>=currentMonth;
+    const totals=new Map();
+    Object.entries(state.days||{}).forEach(([date,list])=>{
+      if(!date.startsWith(month)||date>now||!Array.isArray(list))return;
+      list.forEach(e=>{
+        if(!e||e.type==="cardio")return;
+        const reps=(e.setProgress||[]).reduce((sum,set)=>sum+(Number(set.actual)||0),0);
+        if(reps<=0)return;
+        const key=String(e.name||"Hareket").trim();
+        totals.set(key,(totals.get(key)||0)+reps);
+      });
+    });
+    const rows=[...totals.entries()].map(([name,reps])=>({name,reps})).sort((a,b)=>b.reps-a.reps||a.name.localeCompare(b.name,"tr"));
+    const list=$("monthlyLeaderboard"); const empty=$("monthlyLeaderboardEmpty");
+    if(!list||!empty)return;
+    $("monthlyLeaderboardCaption").textContent=label+" · Hareket başına toplam tekrar";
+    list.innerHTML=""; empty.hidden=rows.length>0;
+    empty.textContent="Bu ay için kaydedilmiş tekrar bulunamadı.";
+    rows.forEach((item,index)=>{const row=document.createElement("div");row.className="dist-row monthly-rank-row";row.innerHTML=`<div class="monthly-rank">${index+1}.</div><div class="dist-name" title="${safeText(item.name)}">${safeText(item.name)}</div><div class="monthly-reps">${item.reps.toLocaleString("tr-TR")} <span>tekrar</span></div>`;list.appendChild(row);});
   }
   function renderWeek(){
     const names=["Pzt","Sal","Çar","Per","Cum","Cmt","Paz"];
