@@ -72,9 +72,9 @@ main{padding-top:25px}.welcome-row{display:flex;align-items:center;justify-conte
 
 
 /* Individual monthly exercise goals — animated circular progress */
-.monthly-goal-form{display:grid;grid-template-columns:minmax(0,1fr) minmax(120px,.7fr) auto;gap:9px;align-items:end;margin:4px 0 16px}
+.monthly-goal-form{display:grid;grid-template-columns:minmax(0,1fr) minmax(130px,.72fr) minmax(140px,.8fr) auto;gap:9px;align-items:end;margin:4px 0 16px}
 .monthly-goal-form label{display:flex;flex-direction:column;gap:6px;color:var(--muted);font-size:11px;font-weight:750}
-.monthly-goal-form input{width:100%;min-width:0;background:#0b1219;border:1px solid var(--border);border-radius:9px;padding:11px;color:var(--text);font:inherit;font-size:13px}
+.monthly-goal-form input,.monthly-goal-form select{width:100%;min-width:0;background:#0b1219;border:1px solid var(--border);border-radius:9px;padding:11px;color:var(--text);font:inherit;font-size:13px}
 .monthly-goals-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:13px}
 .monthly-goal-card{--goal:#69aaff;--goal-rgb:80,160,255;position:relative;overflow:hidden;border:1px solid rgba(var(--goal-rgb),.28);border-radius:17px;padding:14px;background:radial-gradient(ellipse at 50% 48%,rgba(var(--goal-rgb),.09),transparent 62%),linear-gradient(145deg,rgba(255,255,255,.025),rgba(0,0,0,.12));box-shadow:0 0 18px rgba(var(--goal-rgb),.07);}
 .monthly-goal-card.gold{--goal:#ffd45b;--goal-rgb:255,195,55;border-color:rgba(255,205,75,.48);box-shadow:0 0 22px rgba(255,195,55,.19),inset 0 0 18px rgba(255,195,55,.045);animation:goldAura 2.8s ease-in-out infinite}

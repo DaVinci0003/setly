@@ -407,48 +407,78 @@
   function loadMonthlyGoals(){try{return JSON.parse(localStorage.getItem(MONTHLY_GOALS_KEY)||"{}")}catch(_){return {};}}
   let monthlyGoals = loadMonthlyGoals();
   function saveMonthlyGoals(){localStorage.setItem(MONTHLY_GOALS_KEY,JSON.stringify(monthlyGoals));}
-  function monthlyExerciseTotals(month){
-    const totals=new Map();
+  function exerciseFamily(name){
+    const n=String(name||"").toLocaleLowerCase("tr").replace(/ı/g,"i").replace(/ş/g,"s").replace(/ğ/g,"g").replace(/ü/g,"u").replace(/ö/g,"o").replace(/ç/g,"c").normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    if(/omuz dokun/.test(n))return null;
+    if(/sinav|push.?up/.test(n))return {key:"pushup",label:"şınav"};
+    if(/barfiks|pull.?up|chin.?up/.test(n))return {key:"pullup",label:"barfiks"};
+    if(/\bdip\b|dips|dip \(/.test(n))return {key:"dip",label:"dip"};
+    if(/squat/.test(n))return {key:"squat",label:"squat"};
+    return null;
+  }
+  function canonicalExerciseName(name){
+    const n=String(name||"").trim().toLocaleLowerCase("tr");
+    if(n==="normal şınav")return "şınav";
+    if(n==="normal barfiks")return "barfiks";
+    return n;
+  }
+  function goalMatchesExercise(goal,name){
+    if(goal.scope!=="family")return canonicalExerciseName(name)===canonicalExerciseName(goal.name);
+    const family=exerciseFamily(name);
+    return !!family&&family.key===goal.family;
+  }
+  function monthlyGoalCount(goal,month){
+    let total=0;
     Object.entries(state.days||{}).forEach(([date,list])=>{
       if(!date.startsWith(month)||!Array.isArray(list))return;
       list.forEach(e=>{
-        if(!e||e.type==="cardio")return;
-        const name=String(e.name||"").trim(); if(!name)return;
-        const reps=(e.setProgress||[]).reduce((sum,set)=>sum+(Number(set.actual)||0),0);
-        if(reps>0)totals.set(name,(totals.get(name)||0)+reps);
+        if(!e||e.type==="cardio"||!goalMatchesExercise(goal,e.name))return;
+        total+=(e.setProgress||[]).reduce((sum,set)=>sum+(Number(set.actual)||0),0);
       });
     });
-    return totals;
+    return total;
+  }
+  function updateMonthlyGoalScope(){
+    const input=$("monthlyGoalExercise"),select=$("monthlyGoalScope");if(!input||!select)return;
+    const family=exerciseFamily(input.value);
+    const previous=select.value;
+    select.innerHTML='<option value="exact">Normal hareket</option>';
+    if(family){const option=document.createElement("option");option.value="family";option.textContent=`Genel ${family.label}`;select.appendChild(option);}
+    select.value=family&&previous==="family"?"family":"exact";
   }
   function renderMonthlyGoals(){
     const month=monthlyLeaderboardSelectedMonth||todayISO().slice(0,7);
     const list=$("monthlyGoalsList"),empty=$("monthlyGoalsEmpty"),options=$("monthlyGoalExerciseOptions");
     if(!list||!empty)return;
-    const totals=monthlyExerciseTotals(month);
-    const names=new Set([...totals.keys(),...(monthlyGoals[month]||[]).map(g=>g.name)]);
+    const names=new Set([...(monthlyGoals[month]||[]).map(g=>g.name)]);
+    Object.entries(state.days||{}).forEach(([date,items])=>{if(date.startsWith(month)&&Array.isArray(items))items.forEach(e=>{if(e&&e.type!=="cardio"&&e.name)names.add(e.name);});});
     if(options){options.innerHTML="";[...new Set([...library.map(e=>e.name),...names])].sort((a,b)=>a.localeCompare(b,"tr")).forEach(name=>{const opt=document.createElement("option");opt.value=name;options.appendChild(opt);});}
     const goals=monthlyGoals[month]||[];
     list.innerHTML="";empty.hidden=goals.length>0;
     goals.forEach(goal=>{
-      const done=totals.get(goal.name)||0,target=Math.max(1,Number(goal.target)||1),pct=Math.floor(done/target*100);
+      const done=monthlyGoalCount(goal,month),target=Math.max(1,Number(goal.target)||1),pct=Math.floor(done/target*100);
       const tier=pct>=200?"diamond":pct>=100?"gold":"base";
       const ringPct=Math.min(100,done/target*100);
       const circumference=2*Math.PI*49,offset=circumference-(circumference*ringPct/100);
+      const title=goal.scope==="family"?`Genel ${exerciseFamily(goal.name)?.label||goal.familyLabel||goal.name}`:goal.name;
       const card=document.createElement("article");card.className=`monthly-goal-card ${tier}`;
-      card.innerHTML=`<div class="monthly-goal-card-head"><div><strong>${safeText(goal.name)}</strong><small>${target.toLocaleString("tr-TR")} tekrar hedef</small></div><button type="button" class="monthly-goal-delete" aria-label="${safeText(goal.name)} hedefini sil">×</button></div>
+      card.innerHTML=`<div class="monthly-goal-card-head"><div><strong>${safeText(title)}</strong><small>${goal.scope==="family"?"Ailedeki tüm varyasyonlar · ":"Yalnızca bu hareket · "}${target.toLocaleString("tr-TR")} tekrar hedef</small></div><button type="button" class="monthly-goal-delete" aria-label="${safeText(title)} hedefini sil">×</button></div>
         <div class="goal-ring-wrap"><div class="goal-aura"></div><svg class="goal-ring" viewBox="0 0 120 120" role="img" aria-label="${done} tekrar, yüzde ${pct}"><circle class="goal-ring-track" cx="60" cy="60" r="49"></circle><circle class="goal-ring-progress" cx="60" cy="60" r="49" style="stroke-dasharray:${circumference};stroke-dashoffset:${offset}"></circle></svg><div class="goal-ring-center"><strong>${done.toLocaleString("tr-TR")}</strong><span>TEKRAR</span><b>%${pct.toLocaleString("tr-TR")}</b></div></div>
         <div class="monthly-goal-foot"><span>${done.toLocaleString("tr-TR")} / ${target.toLocaleString("tr-TR")}</span><span>${pct>=200?"ELMAS SEVİYESİ":pct>=100?"HEDEF TAMAMLANDI":`${Math.max(0,target-done).toLocaleString("tr-TR")} tekrar kaldı`}</span></div>`;
       card.querySelector(".monthly-goal-delete").addEventListener("click",()=>{monthlyGoals[month]=goals.filter(g=>g.id!==goal.id);saveMonthlyGoals();renderMonthlyGoals();});
       list.appendChild(card);
     });
+    updateMonthlyGoalScope();
   }
+  $("monthlyGoalExercise")?.addEventListener("input",updateMonthlyGoalScope);
   $("monthlyGoalForm")?.addEventListener("submit",event=>{
     event.preventDefault();const name=$("monthlyGoalExercise").value.trim();const target=Number($("monthlyGoalTarget").value);
     if(!name||!Number.isFinite(target)||target<1)return;
+    const family=exerciseFamily(name),scope=$("monthlyGoalScope").value==="family"&&family?"family":"exact";
     const month=monthlyLeaderboardSelectedMonth||todayISO().slice(0,7);if(!monthlyGoals[month])monthlyGoals[month]=[];
-    const existing=monthlyGoals[month].find(g=>g.name.toLocaleLowerCase("tr")===name.toLocaleLowerCase("tr"));
-    if(existing)existing.target=target;else monthlyGoals[month].push({id:id(),name,target});
-    saveMonthlyGoals();$("monthlyGoalExercise").value="";$("monthlyGoalTarget").value="";renderMonthlyGoals();
+    const existing=monthlyGoals[month].find(g=>scope==="family"?g.scope==="family"&&g.family===family.key:g.scope!=="family"&&g.name.toLocaleLowerCase("tr")===name.toLocaleLowerCase("tr"));
+    if(existing)existing.target=target;else monthlyGoals[month].push({id:id(),name,target,scope,...(scope==="family"?{family:family.key,familyLabel:family.label}:{})});
+    saveMonthlyGoals();$("monthlyGoalExercise").value="";$("monthlyGoalTarget").value="";$("monthlyGoalScope").value="exact";renderMonthlyGoals();
   });
 
   function renderWeek(){
