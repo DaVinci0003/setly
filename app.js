@@ -91,9 +91,9 @@
     return (e.setProgress||[]).length >= (e.sets||1) && e.setProgress.every(s=>s.done);
   }
   function progress(){
-    const list=dayList(); if(!list.length)return 0;
-    const total=list.reduce((n,e)=>n+targetCount(e),0);
-    const done=list.reduce((n,e)=>n+(isCardio(e)?(e.done?1:0):(e.mode==="flex"?(isExerciseComplete(e)?1:0):(e.setProgress||[]).filter(s=>s.done).length)),0);
+    const list=dayList();const c=challengeData?.days?.[selectedDate];const includeChallenge=!!(c?.approved&&c.status!=="skipped"&&c.exercises?.length);
+    const total=list.reduce((n,e)=>n+targetCount(e),0)+(includeChallenge?1:0);
+    const done=list.reduce((n,e)=>n+(isCardio(e)?(e.done?1:0):(e.mode==="flex"?(isExerciseComplete(e)?1:0):(e.setProgress||[]).filter(s=>s.done).length)),0)+(includeChallenge&&challengeIsComplete(c)?1:0);
     return Math.round(done/Math.max(total,1)*100);
   }
   function dayLocked(date=selectedDate){return !!state.completedDays[date];}
@@ -212,7 +212,7 @@
     $("openAdd").disabled=locked;$("emptyAdd").disabled=locked;
     $("openAdd").title=locked?"Bugün tamamlandı":"Alıştırma ekle";
     $("emptyState").hidden=list.length>0;
-    $("finishWrap").hidden=list.length===0;
+    $("finishWrap").hidden=list.length===0 && !(challengeData.days?.[selectedDate]?.approved && challengeData.days[selectedDate].status!=="skipped");
     list.forEach(e=>{
       const complete=isExerciseComplete(e);
       const card=document.createElement("article");
@@ -272,6 +272,13 @@
       if(locked)card.querySelectorAll("button,input").forEach(control=>control.disabled=true);
       $("workoutList").appendChild(card);
     });
+    const dailyChallenge=challengeData.days?.[selectedDate];
+    if(dailyChallenge?.approved && dailyChallenge.status!=="skipped" && dailyChallenge.exercises?.length){
+      const ce=dailyChallenge.exercises[0],total=(ce.setProgress||[]).reduce((n,x)=>n+(Number(x.actual)||0),0),done=total>=ce.targetReps;
+      const challengeCard=document.createElement("article");challengeCard.className="exercise-card daily-challenge-workout-card"+(done?" challenge-card-done":"");
+      challengeCard.innerHTML=`<div class="challenge-workout-ribbon">✦ DAILY CHALLENGE · ALTIN GÖREV</div><div class="exercise-top"><div class="exercise-title-wrap"><div class="exercise-icon">${safeText(ce.icon)}</div><div><div class="exercise-name">${safeText(ce.name)}</div><div class="exercise-meta">Günlük Challenge · ${total.toLocaleString("tr-TR")} / ${ce.targetReps} tekrar ${done?'· <span style="color:#ffe49a">TAMAMLANDI ✓</span>':""}</div></div></div><div class="challenge-workout-percent">${Math.min(100,Math.floor(total/ce.targetReps*100))}%</div></div><div class="challenge-progress"><i style="width:${Math.min(100,total/ce.targetReps*100)}%"></i></div><div class="challenge-set-list">${(ce.setProgress||[]).map((set,j)=>`<div class="challenge-set"><span>${j+1}. SET</span>${set.done?`<b>✓ ${set.actual} tekrar</b>`:`<input type="number" min="1" max="1000" inputmode="numeric" id="challenge-input-0-${j}" placeholder="Tekrar"><button type="button" data-challenge-add="0" data-challenge-set="${j}">＋</button>`}</div>`).join("")}</div>${done?'<div class="challenge-card-complete">✦ CHALLENGE TAMAMLANDI ✦</div>':""}`;
+      $("workoutList").appendChild(challengeCard);
+    }
     renderStats();renderDistribution();renderMonthlyLeaderboard();renderWeek();renderSavedGroups();
     const p=progress();
     const finishedToday=dayLocked();
@@ -336,10 +343,10 @@
     save();render();showToast(added?`${group.name} yüklendi: ${added} hareket${skipped?`, ${skipped} zaten plandaydı`:""}.`:`Bu gruptaki hareketler zaten günlük planda.`);
   }
   function renderStats(){
-    const list=dayList(), p=progress(), done=list.filter(isExerciseComplete).length;
+    const list=dayList(), p=progress(), c=challengeData.days?.[selectedDate], challengeActive=!!(c?.approved&&c.status!=="skipped"&&c.exercises?.length), done=list.filter(isExerciseComplete).length+(challengeActive&&challengeIsComplete(c)?1:0), totalItems=list.length+(challengeActive?1:0);
     $("progressValue").textContent=p+"%";$("progressFill").style.width=p+"%";
-    $("progressCaption").textContent=list.length?(dayLocked()?"Gün tamamlandı ve kilitlendi.":p===100?"Bugünkü hedefini tamamladın!":`${list.reduce((n,e)=>n+(isCardio(e)||e.mode==="flex"?1:e.sets),0)-list.reduce((n,e)=>n+(isCardio(e)?(e.done?1:0):(e.mode==="flex"?(isExerciseComplete(e)?1:0):(e.setProgress||[]).filter(s=>s.done).length)),0)} adım kaldı`):"Başlamak için ilk hareketini ekle.";
-    $("completedValue").innerHTML=`${done} <span class="small-unit">/ ${list.length}</span>`;
+    $("progressCaption").textContent=totalItems?(dayLocked()?"Gün tamamlandı ve kilitlendi.":p===100?"Bugünkü hedefini tamamladın!":`${Math.max(0,totalItems-done)} adım kaldı`):"Başlamak için ilk hareketini ekle.";
+    $("completedValue").innerHTML=`${done} <span class="small-unit">/ ${totalItems}</span>`;
     $("repsValue").textContent=totalReps().toLocaleString("tr-TR");
     $("pinnedValue").textContent=state.pinned.length;
   }
@@ -502,27 +509,39 @@
   function makeDailyChallenge(date,noEquipment=false,noBar=false){
     const seed=Number(date.replaceAll("-",""));const rnd=seededRandom(seed);let pool=CHALLENGE_POOL.filter(x=>(!noEquipment||!x.equipment)&&(!noBar||!x.needsBar));
     if(noEquipment||noBar)pool=pool.filter(x=>!x.equipment&&!x.needsBar);
-    // Avoid very similar movement combinations and keep the workload moderate.
-    const chosen=[];while(pool.length&&chosen.length<3){const idx=Math.floor(rnd()*pool.length);chosen.push(pool.splice(idx,1)[0]);}
-    return {date,settings:{noEquipment,noBar},status:"active",exercises:chosen.map((x,i)=>({id:`challenge-${date}-${i}`,name:x.name,icon:x.icon,targetReps:Math.round((x.min+rnd()*(x.max-x.min))/5)*5,setProgress:[{actual:0,done:false}]}))};
+    // One moderate movement per day; rerolls get a new deterministic seed.
+    const reroll=Number(challengeData.rerolls?.[date]||0);
+    const rr=seededRandom(seed + reroll*7919);
+    const chosenPool=pool.filter(x=>!x.level || x.level==="Temel");
+    if(chosenPool.length)pool=chosenPool;
+    const chosen=pool[Math.floor(rr()*pool.length)];
+    const target=Math.round((chosen.min+rr()*(chosen.max-chosen.min))/5)*5;
+    return {date,settings:{noEquipment,noBar},status:"pending",approved:false,exercises:[{id:`challenge-${date}`,name:chosen.name,icon:chosen.icon,targetReps:target,setProgress:[{actual:0,done:false}]}]};
   }
-  function getDailyChallenge(){const date=todayISO();let c=challengeData.days[date];if(!c){const previous=shiftDate(date,-1),prior=challengeData.days[previous];if(prior?.status==="skipped"){const didOther=dayList(previous).some(e=>e.type==="cardio"?e.done:(e.setProgress||[]).some(x=>x.done));if(!didOther)challengeData.streak=0;}c=makeDailyChallenge(date);challengeData.days[date]=c;saveChallengeData();}return c;}
+  function getDailyChallenge(){const date=todayISO();let c=challengeData.days[date];if(!c){const previous=shiftDate(date,-1),prior=challengeData.days[previous];if(prior?.status==="skipped"){const didOther=dayList(previous).some(e=>e.type==="cardio"?e.done:(e.setProgress||[]).some(x=>x.done));if(!didOther)challengeData.streak=0;}c=makeDailyChallenge(date);challengeData.days[date]=c;saveChallengeData();}if(Array.isArray(c.exercises)&&c.exercises.length>1)c.exercises=c.exercises.slice(0,1);if(!c.approved&&c.status==="active")c.status="pending";return c;}
   function challengeIsComplete(c){return !!c&&c.exercises.length>0&&c.exercises.every(e=>(e.setProgress||[]).reduce((n,x)=>n+(Number(x.actual)||0),0)>=e.targetReps);}
   function renderDailyChallenge(){
     const c=getDailyChallenge(),root=$("challengeExercises");if(!root)return;
     $("challengeStreakBadge").textContent=`🔥 ${challengeData.streak||0} GÜN SERİ`;
     $("challengeNoEquipment").checked=!!c.settings.noEquipment;$("challengeNoBar").checked=!!c.settings.noBar;
-    root.innerHTML=c.exercises.map((e,i)=>{const total=(e.setProgress||[]).reduce((n,x)=>n+(Number(x.actual)||0),0),done=total>=e.targetReps;return `<article class="challenge-exercise ${done?"challenge-exercise-done":""}"><div class="challenge-exercise-head"><span class="challenge-exercise-icon">${e.icon}</span><div><strong>${safeText(e.name)}</strong><small>${total.toLocaleString("tr-TR")} / ${e.targetReps} tekrar</small></div><b>${Math.min(100,Math.floor(total/e.targetReps*100))}%</b></div><div class="challenge-progress"><i style="width:${Math.min(100,total/e.targetReps*100)}%"></i></div><div class="challenge-set-list">${e.setProgress.map((set,j)=>`<div class="challenge-set"><span>${j+1}. SET</span>${set.done?`<b>✓ ${set.actual} tekrar</b>`:`<input type="number" min="1" max="1000" inputmode="numeric" id="challenge-input-${i}-${j}" placeholder="Tekrar"><button type="button" data-challenge-add="${i}" data-challenge-set="${j}">＋</button>`}</div>`).join("")}</div></article>`;}).join("");
-    const complete=challengeIsComplete(c);$("challengeCompletePanel").hidden=!complete;$("challengeSkip").hidden=complete;$("challengeClose").textContent=complete?"Harika! Antrenmana geç":"Antrenmana geç";
-    if(complete&&c.status!=="complete"){c.status="complete";if(c.streakAwarded!==true){challengeData.streak=(challengeData.streak||0)+1;c.streakAwarded=true;c.completedAt=new Date().toISOString();challengeData.lastCompleted=todayISO();saveChallengeData();$("challengeStreakBadge").textContent=`🔥 ${challengeData.streak} GÜN SERİ`;} }
+    const e=c.exercises[0];
+    root.innerHTML=e?`<article class="challenge-exercise challenge-preview"><div class="challenge-exercise-head"><span class="challenge-exercise-icon">${e.icon}</span><div><strong>${safeText(e.name)}</strong><small>Günlük toplam hedef: ${e.targetReps} tekrar</small></div><b>✦</b></div><p class="challenge-preview-note">Onayladığında bu tek görev, günlük antrenman listene altın kart olarak eklenecek.</p></article>`:"";
+    const complete=challengeIsComplete(c);$("challengeCompletePanel").hidden=!complete;
+    $("challengeSkip").hidden=complete||c.approved;$("challengeClose").textContent=c.approved?"Antrenmana dön":"Challenge'ı onayla";
+    $("challengeReroll").hidden=c.approved||complete;$("challengeClose").hidden=complete;
+    $("challengeApproveNote").hidden=c.approved;$("challengeDialogTitle").textContent=c.approved?"Challenge günlük antrenmanında":"Günün Challenge'ı";
   }
-  function challengeAddRep(i,j){const c=getDailyChallenge(),e=c.exercises[i];if(!e||c.status==="complete"||c.status==="skipped")return;const input=$(`challenge-input-${i}-${j}`),v=Math.max(0,Math.min(1000,Number(input?.value)||0));if(!v){input?.focus();return;}e.setProgress[j]={actual:v,done:true};const total=e.setProgress.reduce((n,x)=>n+(Number(x.actual)||0),0);if(total<e.targetReps)e.setProgress.push({actual:0,done:false});saveChallengeData();renderDailyChallenge();renderStats();renderMonthlyLeaderboard();}
-  function refreshChallengeForSettings(){const old=getDailyChallenge();if(challengeIsComplete(old)||old.exercises.some(e=>e.setProgress.some(x=>x.done))){showToast("Challenge başladıktan sonra uygunluk ayarları değiştirilemez.");renderDailyChallenge();return;}const next=makeDailyChallenge(todayISO(),$("challengeNoEquipment").checked,$("challengeNoBar").checked);challengeData.days[todayISO()]=next;saveChallengeData();renderDailyChallenge();}
-  function skipDailyChallenge(){const c=getDailyChallenge();if(challengeIsComplete(c))return;const ordinary=dayList(todayISO()).some(e=>e.type==="cardio"?e.done:(e.setProgress||[]).some(x=>x.done));c.status="skipped";c.skippedAt=new Date().toISOString();saveChallengeData();$("challengeStreakBadge").textContent=`🔥 ${challengeData.streak||0} GÜN SERİ`;$("challengeSkip").hidden=true;showToast(ordinary?"Challenge atlandı. Bugünkü antrenmanın serini korudu.":"Challenge atlandı. Bugün başka antrenman yaparsan serin korunur.");}
-  $("challengeExercises")?.addEventListener("click",e=>{const b=e.target.closest("[data-challenge-add]");if(b)challengeAddRep(Number(b.dataset.challengeAdd),Number(b.dataset.challengeSet));});
+  function approveDailyChallenge(){const c=getDailyChallenge();if(!c||c.status==="skipped")return;c.approved=true;c.status="active";c.approvedAt=new Date().toISOString();saveChallengeData();$("dailyChallengeDialog").close();render();showToast("Günlük Challenge altın kart olarak antrenmanına eklendi.");}
+  function rerollDailyChallenge(){const date=todayISO(),old=getDailyChallenge();if(old.approved||challengeIsComplete(old))return;challengeData.rerolls=challengeData.rerolls||{};challengeData.rerolls[date]=(challengeData.rerolls[date]||0)+1;challengeData.days[date]=makeDailyChallenge(date,$("challengeNoEquipment").checked,$("challengeNoBar").checked);saveChallengeData();renderDailyChallenge();}
+  function challengeAddRep(i,j){const c=getDailyChallenge(),e=c.exercises[i];if(!e||c.status==="complete"||c.status==="skipped")return;const input=$(`challenge-input-${i}-${j}`)||$(`challenge-input-${j}`),v=Math.max(0,Math.min(1000,Number(input?.value)||0));if(!v){input?.focus();return;}e.setProgress[j]={actual:v,done:true};const total=e.setProgress.reduce((n,x)=>n+(Number(x.actual)||0),0);if(total<e.targetReps)e.setProgress.push({actual:0,done:false});saveChallengeData();renderDailyChallenge();render();}
+  function refreshChallengeForSettings(){const old=getDailyChallenge();if(old.approved||challengeIsComplete(old)||old.exercises.some(e=>e.setProgress.some(x=>x.done))){showToast("Challenge onaylandıktan sonra uygunluk ayarları değiştirilemez.");renderDailyChallenge();return;}challengeData.days[todayISO()]=makeDailyChallenge(todayISO(),$("challengeNoEquipment").checked,$("challengeNoBar").checked);saveChallengeData();renderDailyChallenge();}
+  function skipDailyChallenge(){const c=getDailyChallenge();if(challengeIsComplete(c))return;const ordinary=dayList(todayISO()).some(e=>e.type==="cardio"?e.done:(e.setProgress||[]).some(x=>x.done));c.status="skipped";c.skippedAt=new Date().toISOString();saveChallengeData();$("challengeStreakBadge").textContent=`🔥 ${challengeData.streak||0} GÜN SERİ`;$("dailyChallengeDialog").close();render();showToast(ordinary?"Challenge atlandı. Bugünkü antrenmanın serini korudu.":"Challenge atlandı. Bugün başka antrenman yaparsan serin korunur.");}
+  $("workoutList")?.addEventListener("click",e=>{const b=e.target.closest("[data-challenge-add]");if(b)challengeAddRep(Number(b.dataset.challengeAdd),Number(b.dataset.challengeSet));});
   $("challengeNoEquipment")?.addEventListener("change",refreshChallengeForSettings);$("challengeNoBar")?.addEventListener("change",refreshChallengeForSettings);
-  $("challengeSkip")?.addEventListener("click",skipDailyChallenge);$("challengeClose")?.addEventListener("click",()=>$("dailyChallengeDialog").close());
-  function openDailyChallenge(){renderDailyChallenge();const d=$("dailyChallengeDialog");if(d&&!d.open)d.showModal();}
+  $("challengeSkip")?.addEventListener("click",skipDailyChallenge);
+  $("challengeClose")?.addEventListener("click",()=>{const c=getDailyChallenge();if(!c.approved)approveDailyChallenge();else $("dailyChallengeDialog").close();});
+  $("challengeReroll")?.addEventListener("click",rerollDailyChallenge);
+  function openDailyChallenge(){const c=getDailyChallenge();if(!c.approved&&c.status!=="skipped"){renderDailyChallenge();const d=$("dailyChallengeDialog");if(d&&!d.open)d.showModal();}}
 
   function renderWeek(){
     const names=["Pzt","Sal","Çar","Per","Cum","Cmt","Paz"];

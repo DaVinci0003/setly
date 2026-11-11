@@ -1,21 +1,14 @@
-# Setly — Aylık tekrar sıralaması
+# Setly — Günlük Challenge onay akışı
 
-Bu sürüm, mevcut Setly verilerini (`setly-workout-v1`) koruyarak ana ekrana “Bu Ay En Çok Yaptıklarım” sıralaması ekler.
+Bu sürüm mevcut `setly-workout-v1` antrenman verilerini ve `setly-daily-challenge-v1` Challenge geçmişini korur.
 
-- İçinde bulunulan ayın kayıtlarını toplar.
-- Aynı isimdeki hareketlerin farklı günlerdeki set tekrarlarını birleştirir.
-- Hareketleri toplam tekrar sayısına göre büyükten küçüğe sıralar.
-- Sıralama her uygulama çiziminde güncellenir; yeni tekrar kaydedilince liste de güncellenir.
-- Kardiyo süre/mesafeleri tekrar sayısı olmadığı için bu listede gösterilmez.
-- Eski ayların kayıtları silinmez; yalnızca mevcut ayın toplamına katılmaz.
+## Günlük Challenge
+- Her gün yalnızca tek bir temel seviye hareket ve toplam tekrar hedefi sunulur.
+- Challenge ilk açıldığında onay ekranı gösterilir; kullanıcı ekipman/ortam seçeneklerini belirleyebilir, başka görev isteyebilir veya o gün atlayabilir.
+- Onaylanan görev günlük antrenman listesinin içinde altın efektli ayrı bir kart olarak görünür.
+- Tekrarlar normal Setly akışındaki gibi sayı girilip `+` ile set set kaydedilir.
+- Challenge ilerlemesi günlük ilerlemeye, toplam tekrara, aylık tekrar sıralamasına ve aylık hedeflere dahil edilir.
+- Tamamlanınca günlük seri otomatik artar.
 
 ## Kurulum
-ZIP içindeki dosyaları GitHub Pages deposunun ana dizinine yükleyip eskilerin üzerine yazın. Actions/Pages dağıtımı tamamlandıktan sonra telefonda Setly'yi kapatın, Chrome'da siteyi açıp yenileyin ve uygulamayı yeniden açın. Tarayıcı veya uygulama verilerini temizlemeyin.
-
-## Günlük Challenge (v15)
-- Uygulama açıldığında Günün Challenge'ı penceresi gösterilir.
-- Günlük temel hareketler, tekrar hedefleri ve her harekette art arda set ekleme akışı bulunur.
-- Ekipmanım yok / Bar veya uygun ortam yok seçenekleri challenge listesini yeniden oluşturur.
-- Tamamlanma günlük seriyi otomatik artırır; ayrıca antrenmanı tamamla butonuna basmak gerekmez.
-- Challenge tekrarları günlük toplam tekrar, aylık tekrar sıralaması ve aylık hareket hedeflerine dahil edilir.
-- Challenge kayıtları `setly-daily-challenge-v1` anahtarında tutulur; mevcut `setly-workout-v1` antrenman kayıtları korunur.
+Arşivdeki `index.html`, `app.js`, `styles.css`, `sw.js`, `manifest.webmanifest` ve `assets` klasörünü GitHub Pages deposunun ana dizinine yükleyip mevcut dosyaların üzerine yazın. `index.html` depo ana dizininde doğrudan görünmelidir. Tarayıcı/uygulama verilerini temizlemeyin; kayıtlar cihazdaki localStorage içinde tutulur.

@@ -29,18 +29,17 @@
       <div class="daily-challenge-shell">
         <div class="challenge-particles" aria-hidden="true"></div>
         <div class="challenge-topline"><span>✦ SETLY DAILY CHALLENGE</span><span id="challengeStreakBadge">🔥 0 GÜN SERİ</span></div>
-        <h1>Günün Challenge’ı</h1>
-        <p class="challenge-intro">Her gün değişen temel seviye hareketler. Tekrarlarını set set kaydet; kendi tempona göre ilerle.</p>
+        <h1 id="challengeDialogTitle">Günün Challenge’ı</h1>
+        <p class="challenge-intro">Bugün için tek bir hedef hazırladım. Uygunluk seçeneklerini belirle, sonra onaylayıp günlük antrenmanına ekle.</p>
         <div class="challenge-settings">
           <label><input type="checkbox" id="challengeNoEquipment"> Ekipmanım yok</label>
           <label><input type="checkbox" id="challengeNoBar"> Bar / uygun ortam yok</label>
         </div>
         <div id="challengeExercises" class="challenge-exercises"></div>
-        <div id="challengeCompletePanel" class="challenge-complete-panel" hidden>
-          <div class="challenge-complete-glow"></div><div class="challenge-complete-title">✦ CHALLENGE TAMAMLANDI ✦</div><p>Bugünün hedefini bitirdin. Günlük serine eklendi!</p>
-        </div>
-        <div class="challenge-actions"><button type="button" class="challenge-skip-btn" id="challengeSkip">Bugün challenge'ı atla</button><button type="button" class="challenge-close-btn" id="challengeClose">Antrenmana geç</button></div>
-        <p class="challenge-footnote">Hareketleri rahat ve kontrollü yap. Ağrı veya aşırı yorgunluk hissedersen durup dinlenebilirsin.</p>
+        <p id="challengeApproveNote" class="challenge-approve-note">Onayladığında görev, günlük antrenman listende altın efektli ayrı bir kart olarak görünecek.</p>
+        <div id="challengeCompletePanel" class="challenge-complete-panel" hidden><div class="challenge-complete-glow"></div><div class="challenge-complete-title">✦ CHALLENGE TAMAMLANDI ✦</div><p>Bugünün hedefini bitirdin. Günlük serine eklendi!</p></div>
+        <div class="challenge-actions"><button type="button" class="challenge-skip-btn" id="challengeSkip">Bugün istemiyorum</button><button type="button" class="challenge-skip-btn" id="challengeReroll">Başka challenge</button><button type="button" class="challenge-close-btn" id="challengeClose">Challenge'ı onayla</button></div>
+        <p class="challenge-footnote">Hedefi kendi tempona göre tamamla. Rahatsızlık veya aşırı yorgunluk hissedersen ara verebilir ya da bırakabilirsin.</p>
       </div>
     </dialog>
     <main>
