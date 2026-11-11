@@ -25,6 +25,24 @@
       </div>
     </header>
 
+    <dialog id="dailyChallengeDialog" class="daily-challenge-dialog">
+      <div class="daily-challenge-shell">
+        <div class="challenge-particles" aria-hidden="true"></div>
+        <div class="challenge-topline"><span>✦ SETLY DAILY CHALLENGE</span><span id="challengeStreakBadge">🔥 0 GÜN SERİ</span></div>
+        <h1>Günün Challenge’ı</h1>
+        <p class="challenge-intro">Her gün değişen temel seviye hareketler. Tekrarlarını set set kaydet; kendi tempona göre ilerle.</p>
+        <div class="challenge-settings">
+          <label><input type="checkbox" id="challengeNoEquipment"> Ekipmanım yok</label>
+          <label><input type="checkbox" id="challengeNoBar"> Bar / uygun ortam yok</label>
+        </div>
+        <div id="challengeExercises" class="challenge-exercises"></div>
+        <div id="challengeCompletePanel" class="challenge-complete-panel" hidden>
+          <div class="challenge-complete-glow"></div><div class="challenge-complete-title">✦ CHALLENGE TAMAMLANDI ✦</div><p>Bugünün hedefini bitirdin. Günlük serine eklendi!</p>
+        </div>
+        <div class="challenge-actions"><button type="button" class="challenge-skip-btn" id="challengeSkip">Bugün challenge'ı atla</button><button type="button" class="challenge-close-btn" id="challengeClose">Antrenmana geç</button></div>
+        <p class="challenge-footnote">Hareketleri rahat ve kontrollü yap. Ağrı veya aşırı yorgunluk hissedersen durup dinlenebilirsin.</p>
+      </div>
+    </dialog>
     <main>
       <div class="welcome-row">
         <div>
@@ -99,6 +117,7 @@
             <form id="monthlyGoalForm" class="monthly-goal-form">
               <label>Hareket adı<input id="monthlyGoalExercise" list="monthlyGoalExerciseOptions" placeholder="Örn. Şınav" maxlength="60" required></label>
               <datalist id="monthlyGoalExerciseOptions"></datalist>
+              <label>Hedef türü<select id="monthlyGoalScope"><option value="exact">Normal hareket</option></select></label>
               <label>Aylık tekrar hedefi<input id="monthlyGoalTarget" type="number" min="1" max="1000000" step="1" placeholder="1000" required></label>
               <button class="primary-btn" type="submit">＋ Hedef ekle</button>
             </form>

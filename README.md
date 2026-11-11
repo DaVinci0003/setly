@@ -11,3 +11,11 @@ Bu sürüm, mevcut Setly verilerini (`setly-workout-v1`) koruyarak ana ekrana �
 
 ## Kurulum
 ZIP içindeki dosyaları GitHub Pages deposunun ana dizinine yükleyip eskilerin üzerine yazın. Actions/Pages dağıtımı tamamlandıktan sonra telefonda Setly'yi kapatın, Chrome'da siteyi açıp yenileyin ve uygulamayı yeniden açın. Tarayıcı veya uygulama verilerini temizlemeyin.
+
+## Günlük Challenge (v15)
+- Uygulama açıldığında Günün Challenge'ı penceresi gösterilir.
+- Günlük temel hareketler, tekrar hedefleri ve her harekette art arda set ekleme akışı bulunur.
+- Ekipmanım yok / Bar veya uygun ortam yok seçenekleri challenge listesini yeniden oluşturur.
+- Tamamlanma günlük seriyi otomatik artırır; ayrıca antrenmanı tamamla butonuna basmak gerekmez.
+- Challenge tekrarları günlük toplam tekrar, aylık tekrar sıralaması ve aylık hareket hedeflerine dahil edilir.
+- Challenge kayıtları `setly-daily-challenge-v1` anahtarında tutulur; mevcut `setly-workout-v1` antrenman kayıtları korunur.

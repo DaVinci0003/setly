@@ -98,7 +98,7 @@
   }
   function dayLocked(date=selectedDate){return !!state.completedDays[date];}
   function totalReps(){
-    return dayList().reduce((sum,e)=>sum+(e.type==="strength"?(e.setProgress||[]).reduce((s,p)=>s+(Number(p.actual)||0),0):0),0);
+    return dayList().reduce((sum,e)=>sum+(e.type==="strength"?(e.setProgress||[]).reduce((s,p)=>s+(Number(p.actual)||0),0):0),0) + challengeReps(selectedDate);
   }
   function safeText(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
   function showToast(message){
@@ -394,6 +394,7 @@
         totals.set(key,(totals.get(key)||0)+reps);
       });
     });
+    Object.entries(challengeData.days||{}).forEach(([date,challenge])=>{if(!date.startsWith(month)||!challenge||!Array.isArray(challenge.exercises))return;challenge.exercises.forEach(e=>{const reps=(e.setProgress||[]).reduce((sum,set)=>sum+(Number(set.actual)||0),0);if(reps>0)totals.set(e.name,(totals.get(e.name)||0)+reps);});});
     const rows=[...totals.entries()].map(([name,reps])=>({name,reps})).sort((a,b)=>b.reps-a.reps||a.name.localeCompare(b.name,"tr"));
     const list=$("monthlyLeaderboard"); const empty=$("monthlyLeaderboardEmpty");
     if(!list||!empty)return;
@@ -407,49 +408,121 @@
   function loadMonthlyGoals(){try{return JSON.parse(localStorage.getItem(MONTHLY_GOALS_KEY)||"{}")}catch(_){return {};}}
   let monthlyGoals = loadMonthlyGoals();
   function saveMonthlyGoals(){localStorage.setItem(MONTHLY_GOALS_KEY,JSON.stringify(monthlyGoals));}
-  function monthlyExerciseTotals(month){
-    const totals=new Map();
+  function exerciseFamily(name){
+    const n=String(name||"").toLocaleLowerCase("tr").replace(/ı/g,"i").replace(/ş/g,"s").replace(/ğ/g,"g").replace(/ü/g,"u").replace(/ö/g,"o").replace(/ç/g,"c").normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    if(/omuz dokun/.test(n))return null;
+    if(/sinav|push.?up/.test(n))return {key:"pushup",label:"şınav"};
+    if(/barfiks|pull.?up|chin.?up/.test(n))return {key:"pullup",label:"barfiks"};
+    if(/\bdip\b|dips|dip \(/.test(n))return {key:"dip",label:"dip"};
+    if(/squat/.test(n))return {key:"squat",label:"squat"};
+    return null;
+  }
+  function canonicalExerciseName(name){
+    const n=String(name||"").trim().toLocaleLowerCase("tr");
+    if(n==="normal şınav")return "şınav";
+    if(n==="normal barfiks")return "barfiks";
+    return n;
+  }
+  function goalMatchesExercise(goal,name){
+    if(goal.scope!=="family")return canonicalExerciseName(name)===canonicalExerciseName(goal.name);
+    const family=exerciseFamily(name);
+    return !!family&&family.key===goal.family;
+  }
+  function monthlyGoalCount(goal,month){
+    let total=0;
     Object.entries(state.days||{}).forEach(([date,list])=>{
       if(!date.startsWith(month)||!Array.isArray(list))return;
       list.forEach(e=>{
-        if(!e||e.type==="cardio")return;
-        const name=String(e.name||"").trim(); if(!name)return;
-        const reps=(e.setProgress||[]).reduce((sum,set)=>sum+(Number(set.actual)||0),0);
-        if(reps>0)totals.set(name,(totals.get(name)||0)+reps);
+        if(!e||e.type==="cardio"||!goalMatchesExercise(goal,e.name))return;
+        total+=(e.setProgress||[]).reduce((sum,set)=>sum+(Number(set.actual)||0),0);
       });
     });
-    return totals;
+    Object.entries(challengeData.days||{}).forEach(([date,challenge])=>{if(!date.startsWith(month)||!challenge||!Array.isArray(challenge.exercises))return;challenge.exercises.forEach(e=>{if(goalMatchesExercise(goal,e.name))total+=(e.setProgress||[]).reduce((sum,set)=>sum+(Number(set.actual)||0),0);});});
+    return total;
+  }
+  function updateMonthlyGoalScope(){
+    const input=$("monthlyGoalExercise"),select=$("monthlyGoalScope");if(!input||!select)return;
+    const family=exerciseFamily(input.value);
+    const previous=select.value;
+    select.innerHTML='<option value="exact">Normal hareket</option>';
+    if(family){const option=document.createElement("option");option.value="family";option.textContent=`Genel ${family.label}`;select.appendChild(option);}
+    select.value=family&&previous==="family"?"family":"exact";
   }
   function renderMonthlyGoals(){
     const month=monthlyLeaderboardSelectedMonth||todayISO().slice(0,7);
     const list=$("monthlyGoalsList"),empty=$("monthlyGoalsEmpty"),options=$("monthlyGoalExerciseOptions");
     if(!list||!empty)return;
-    const totals=monthlyExerciseTotals(month);
-    const names=new Set([...totals.keys(),...(monthlyGoals[month]||[]).map(g=>g.name)]);
+    const names=new Set([...(monthlyGoals[month]||[]).map(g=>g.name)]);
+    Object.entries(state.days||{}).forEach(([date,items])=>{if(date.startsWith(month)&&Array.isArray(items))items.forEach(e=>{if(e&&e.type!=="cardio"&&e.name)names.add(e.name);});});
     if(options){options.innerHTML="";[...new Set([...library.map(e=>e.name),...names])].sort((a,b)=>a.localeCompare(b,"tr")).forEach(name=>{const opt=document.createElement("option");opt.value=name;options.appendChild(opt);});}
     const goals=monthlyGoals[month]||[];
     list.innerHTML="";empty.hidden=goals.length>0;
     goals.forEach(goal=>{
-      const done=totals.get(goal.name)||0,target=Math.max(1,Number(goal.target)||1),pct=Math.floor(done/target*100);
+      const done=monthlyGoalCount(goal,month),target=Math.max(1,Number(goal.target)||1),pct=Math.floor(done/target*100);
       const tier=pct>=200?"diamond":pct>=100?"gold":"base";
       const ringPct=Math.min(100,done/target*100);
       const circumference=2*Math.PI*49,offset=circumference-(circumference*ringPct/100);
+      const title=goal.scope==="family"?`Genel ${exerciseFamily(goal.name)?.label||goal.familyLabel||goal.name}`:goal.name;
       const card=document.createElement("article");card.className=`monthly-goal-card ${tier}`;
-      card.innerHTML=`<div class="monthly-goal-card-head"><div><strong>${safeText(goal.name)}</strong><small>${target.toLocaleString("tr-TR")} tekrar hedef</small></div><button type="button" class="monthly-goal-delete" aria-label="${safeText(goal.name)} hedefini sil">×</button></div>
+      card.innerHTML=`<div class="monthly-goal-card-head"><div><strong>${safeText(title)}</strong><small>${goal.scope==="family"?"Ailedeki tüm varyasyonlar · ":"Yalnızca bu hareket · "}${target.toLocaleString("tr-TR")} tekrar hedef</small></div><button type="button" class="monthly-goal-delete" aria-label="${safeText(title)} hedefini sil">×</button></div>
         <div class="goal-ring-wrap"><div class="goal-aura"></div><svg class="goal-ring" viewBox="0 0 120 120" role="img" aria-label="${done} tekrar, yüzde ${pct}"><circle class="goal-ring-track" cx="60" cy="60" r="49"></circle><circle class="goal-ring-progress" cx="60" cy="60" r="49" style="stroke-dasharray:${circumference};stroke-dashoffset:${offset}"></circle></svg><div class="goal-ring-center"><strong>${done.toLocaleString("tr-TR")}</strong><span>TEKRAR</span><b>%${pct.toLocaleString("tr-TR")}</b></div></div>
         <div class="monthly-goal-foot"><span>${done.toLocaleString("tr-TR")} / ${target.toLocaleString("tr-TR")}</span><span>${pct>=200?"ELMAS SEVİYESİ":pct>=100?"HEDEF TAMAMLANDI":`${Math.max(0,target-done).toLocaleString("tr-TR")} tekrar kaldı`}</span></div>`;
       card.querySelector(".monthly-goal-delete").addEventListener("click",()=>{monthlyGoals[month]=goals.filter(g=>g.id!==goal.id);saveMonthlyGoals();renderMonthlyGoals();});
       list.appendChild(card);
     });
+    updateMonthlyGoalScope();
   }
+  $("monthlyGoalExercise")?.addEventListener("input",updateMonthlyGoalScope);
   $("monthlyGoalForm")?.addEventListener("submit",event=>{
     event.preventDefault();const name=$("monthlyGoalExercise").value.trim();const target=Number($("monthlyGoalTarget").value);
     if(!name||!Number.isFinite(target)||target<1)return;
+    const family=exerciseFamily(name),scope=$("monthlyGoalScope").value==="family"&&family?"family":"exact";
     const month=monthlyLeaderboardSelectedMonth||todayISO().slice(0,7);if(!monthlyGoals[month])monthlyGoals[month]=[];
-    const existing=monthlyGoals[month].find(g=>g.name.toLocaleLowerCase("tr")===name.toLocaleLowerCase("tr"));
-    if(existing)existing.target=target;else monthlyGoals[month].push({id:id(),name,target});
-    saveMonthlyGoals();$("monthlyGoalExercise").value="";$("monthlyGoalTarget").value="";renderMonthlyGoals();
+    const existing=monthlyGoals[month].find(g=>scope==="family"?g.scope==="family"&&g.family===family.key:g.scope!=="family"&&g.name.toLocaleLowerCase("tr")===name.toLocaleLowerCase("tr"));
+    if(existing)existing.target=target;else monthlyGoals[month].push({id:id(),name,target,scope,...(scope==="family"?{family:family.key,familyLabel:family.label}:{})});
+    saveMonthlyGoals();$("monthlyGoalExercise").value="";$("monthlyGoalTarget").value="";$("monthlyGoalScope").value="exact";renderMonthlyGoals();
   });
+
+  // Daily challenge: stored separately from ordinary plans, but its reps count in totals and monthly goals.
+  const CHALLENGE_KEY="setly-daily-challenge-v1";
+  function loadChallengeData(){try{return JSON.parse(localStorage.getItem(CHALLENGE_KEY)||'{"days":{},"streak":0,"lastCompleted":""}')}catch(_){return {days:{},streak:0,lastCompleted:""};}}
+  let challengeData=loadChallengeData();
+  function saveChallengeData(){localStorage.setItem(CHALLENGE_KEY,JSON.stringify(challengeData));}
+  function challengeReps(date){const c=challengeData.days?.[date];return (c?.exercises||[]).reduce((n,e)=>n+(e.setProgress||[]).reduce((a,x)=>a+(Number(x.actual)||0),0),0);}
+  const CHALLENGE_POOL=[
+    {name:"Şınav",min:45,max:60,icon:"💪",needsBar:false,equipment:false},
+    {name:"Squat",min:50,max:70,icon:"🦵",needsBar:false,equipment:false},
+    {name:"Crunch",min:35,max:50,icon:"🔥",needsBar:false,equipment:false},
+    {name:"Glute bridge",min:40,max:55,icon:"🦵",needsBar:false,equipment:false},
+    {name:"Mountain climber",min:40,max:60,icon:"⚡",needsBar:false,equipment:false},
+    {name:"Barfiks",min:8,max:15,icon:"🧗",needsBar:true,equipment:false},
+    {name:"Dumbbell biceps curl",min:30,max:45,icon:"🏋️",needsBar:false,equipment:true}
+  ];
+  function seededRandom(seed){let x=seed>>>0;return ()=>{x=(x*1664525+1013904223)>>>0;return x/4294967296;};}
+  function makeDailyChallenge(date,noEquipment=false,noBar=false){
+    const seed=Number(date.replaceAll("-",""));const rnd=seededRandom(seed);let pool=CHALLENGE_POOL.filter(x=>(!noEquipment||!x.equipment)&&(!noBar||!x.needsBar));
+    if(noEquipment||noBar)pool=pool.filter(x=>!x.equipment&&!x.needsBar);
+    // Avoid very similar movement combinations and keep the workload moderate.
+    const chosen=[];while(pool.length&&chosen.length<3){const idx=Math.floor(rnd()*pool.length);chosen.push(pool.splice(idx,1)[0]);}
+    return {date,settings:{noEquipment,noBar},status:"active",exercises:chosen.map((x,i)=>({id:`challenge-${date}-${i}`,name:x.name,icon:x.icon,targetReps:Math.round((x.min+rnd()*(x.max-x.min))/5)*5,setProgress:[{actual:0,done:false}]}))};
+  }
+  function getDailyChallenge(){const date=todayISO();let c=challengeData.days[date];if(!c){const previous=shiftDate(date,-1),prior=challengeData.days[previous];if(prior?.status==="skipped"){const didOther=dayList(previous).some(e=>e.type==="cardio"?e.done:(e.setProgress||[]).some(x=>x.done));if(!didOther)challengeData.streak=0;}c=makeDailyChallenge(date);challengeData.days[date]=c;saveChallengeData();}return c;}
+  function challengeIsComplete(c){return !!c&&c.exercises.length>0&&c.exercises.every(e=>(e.setProgress||[]).reduce((n,x)=>n+(Number(x.actual)||0),0)>=e.targetReps);}
+  function renderDailyChallenge(){
+    const c=getDailyChallenge(),root=$("challengeExercises");if(!root)return;
+    $("challengeStreakBadge").textContent=`🔥 ${challengeData.streak||0} GÜN SERİ`;
+    $("challengeNoEquipment").checked=!!c.settings.noEquipment;$("challengeNoBar").checked=!!c.settings.noBar;
+    root.innerHTML=c.exercises.map((e,i)=>{const total=(e.setProgress||[]).reduce((n,x)=>n+(Number(x.actual)||0),0),done=total>=e.targetReps;return `<article class="challenge-exercise ${done?"challenge-exercise-done":""}"><div class="challenge-exercise-head"><span class="challenge-exercise-icon">${e.icon}</span><div><strong>${safeText(e.name)}</strong><small>${total.toLocaleString("tr-TR")} / ${e.targetReps} tekrar</small></div><b>${Math.min(100,Math.floor(total/e.targetReps*100))}%</b></div><div class="challenge-progress"><i style="width:${Math.min(100,total/e.targetReps*100)}%"></i></div><div class="challenge-set-list">${e.setProgress.map((set,j)=>`<div class="challenge-set"><span>${j+1}. SET</span>${set.done?`<b>✓ ${set.actual} tekrar</b>`:`<input type="number" min="1" max="1000" inputmode="numeric" id="challenge-input-${i}-${j}" placeholder="Tekrar"><button type="button" data-challenge-add="${i}" data-challenge-set="${j}">＋</button>`}</div>`).join("")}</div></article>`;}).join("");
+    const complete=challengeIsComplete(c);$("challengeCompletePanel").hidden=!complete;$("challengeSkip").hidden=complete;$("challengeClose").textContent=complete?"Harika! Antrenmana geç":"Antrenmana geç";
+    if(complete&&c.status!=="complete"){c.status="complete";if(c.streakAwarded!==true){challengeData.streak=(challengeData.streak||0)+1;c.streakAwarded=true;c.completedAt=new Date().toISOString();challengeData.lastCompleted=todayISO();saveChallengeData();$("challengeStreakBadge").textContent=`🔥 ${challengeData.streak} GÜN SERİ`;} }
+  }
+  function challengeAddRep(i,j){const c=getDailyChallenge(),e=c.exercises[i];if(!e||c.status==="complete"||c.status==="skipped")return;const input=$(`challenge-input-${i}-${j}`),v=Math.max(0,Math.min(1000,Number(input?.value)||0));if(!v){input?.focus();return;}e.setProgress[j]={actual:v,done:true};const total=e.setProgress.reduce((n,x)=>n+(Number(x.actual)||0),0);if(total<e.targetReps)e.setProgress.push({actual:0,done:false});saveChallengeData();renderDailyChallenge();renderStats();renderMonthlyLeaderboard();}
+  function refreshChallengeForSettings(){const old=getDailyChallenge();if(challengeIsComplete(old)||old.exercises.some(e=>e.setProgress.some(x=>x.done))){showToast("Challenge başladıktan sonra uygunluk ayarları değiştirilemez.");renderDailyChallenge();return;}const next=makeDailyChallenge(todayISO(),$("challengeNoEquipment").checked,$("challengeNoBar").checked);challengeData.days[todayISO()]=next;saveChallengeData();renderDailyChallenge();}
+  function skipDailyChallenge(){const c=getDailyChallenge();if(challengeIsComplete(c))return;const ordinary=dayList(todayISO()).some(e=>e.type==="cardio"?e.done:(e.setProgress||[]).some(x=>x.done));c.status="skipped";c.skippedAt=new Date().toISOString();saveChallengeData();$("challengeStreakBadge").textContent=`🔥 ${challengeData.streak||0} GÜN SERİ`;$("challengeSkip").hidden=true;showToast(ordinary?"Challenge atlandı. Bugünkü antrenmanın serini korudu.":"Challenge atlandı. Bugün başka antrenman yaparsan serin korunur.");}
+  $("challengeExercises")?.addEventListener("click",e=>{const b=e.target.closest("[data-challenge-add]");if(b)challengeAddRep(Number(b.dataset.challengeAdd),Number(b.dataset.challengeSet));});
+  $("challengeNoEquipment")?.addEventListener("change",refreshChallengeForSettings);$("challengeNoBar")?.addEventListener("change",refreshChallengeForSettings);
+  $("challengeSkip")?.addEventListener("click",skipDailyChallenge);$("challengeClose")?.addEventListener("click",()=>$("dailyChallengeDialog").close());
+  function openDailyChallenge(){renderDailyChallenge();const d=$("dailyChallengeDialog");if(d&&!d.open)d.showModal();}
 
   function renderWeek(){
     const names=["Pzt","Sal","Çar","Per","Cum","Cmt","Paz"];
@@ -669,4 +742,5 @@
     });
   }
   render();
+  openDailyChallenge();
 })();
