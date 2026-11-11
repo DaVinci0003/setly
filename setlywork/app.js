@@ -1,0 +1,672 @@
+(() => {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const STORAGE_KEY = "setly-workout-v1";
+  const todayISO = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  };
+  const shiftDate = (iso, amount) => { const d = new Date(iso+"T12:00:00"); d.setDate(d.getDate()+amount); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
+  const prettyDate = iso => new Date(iso+"T12:00:00").toLocaleDateString("tr-TR",{day:"numeric",month:"long",year:"numeric"});
+  const id = () => Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4);
+  const library = [
+    ["Şınav","Vücut ağırlığı","💪","strength"],["Geniş tutuş şınav","Vücut ağırlığı","💪","strength"],["Dar tutuş şınav","Vücut ağırlığı","💪","strength"],["Elmas şınav","Vücut ağırlığı","💪","strength"],["Eğimli şınav","Vücut ağırlığı","💪","strength"],["Ayak yükselterek şınav","Vücut ağırlığı","💪","strength"],
+    ["Barfiks","Vücut ağırlığı","🧗","strength"],["Ters tutuş barfiks (chin-up)","Vücut ağırlığı","🧗","strength"],["Negatif barfiks","Vücut ağırlığı","🧗","strength"],["Squat","Vücut ağırlığı","🦵","strength"],["Jump squat","Vücut ağırlığı","🦵","strength"],["Lunge","Vücut ağırlığı","🦵","strength"],["Bulgarian split squat","Vücut ağırlığı","🦵","strength"],["Glute bridge","Vücut ağırlığı","🦵","strength"],["Calf raise","Vücut ağırlığı","🦵","strength"],
+    ["Mekik","Vücut ağırlığı","🔥","strength"],["Crunch","Vücut ağırlığı","🔥","strength"],["Plank","Vücut ağırlığı","🔥","timed"],["Side plank","Vücut ağırlığı","🔥","timed"],["Leg raise","Vücut ağırlığı","🔥","strength"],["Mountain climber","Vücut ağırlığı","🔥","strength"],["Burpee","Vücut ağırlığı","⚡","strength"],["Şınav pozisyonunda omuz dokunuşu","Vücut ağırlığı","💪","strength"],["Dip (paralel bar)","Vücut ağırlığı","💪","strength"],["Bench dip","Vücut ağırlığı","💪","strength"],
+    ["Dumbbell bench press","Dumbbell","🏋️","strength"],["Dumbbell shoulder press","Dumbbell","🏋️","strength"],["Dumbbell lateral raise","Dumbbell","🏋️","strength"],["Dumbbell front raise","Dumbbell","🏋️","strength"],["Dumbbell biceps curl","Dumbbell","💪","strength"],["Hammer curl","Dumbbell","💪","strength"],["Dumbbell row","Dumbbell","🏋️","strength"],["Tek kol dumbbell row","Dumbbell","🏋️","strength"],["Dumbbell fly","Dumbbell","🏋️","strength"],["Dumbbell pullover","Dumbbell","🏋️","strength"],["Dumbbell Romanian deadlift","Dumbbell","🦵","strength"],["Dumbbell lunge","Dumbbell","🦵","strength"],["Goblet squat","Dumbbell","🦵","strength"],["Dumbbell shrug","Dumbbell","🏋️","strength"],["Dumbbell triceps extension","Dumbbell","💪","strength"],["Dumbbell kickback","Dumbbell","💪","strength"],
+    ["Bench press","Barbell","🏋️","strength"],["Incline bench press","Barbell","🏋️","strength"],["Deadlift","Barbell","🏋️","strength"],["Romanian deadlift","Barbell","🏋️","strength"],["Barbell squat","Barbell","🦵","strength"],["Front squat","Barbell","🦵","strength"],["Overhead press","Barbell","🏋️","strength"],["Barbell row","Barbell","🏋️","strength"],["Hip thrust","Barbell","🦵","strength"],["Barbell curl","Barbell","💪","strength"],["Skull crusher","Barbell","💪","strength"],
+    ["Koşu","Kardiyo","🏃","cardio"],["Yürüyüş","Kardiyo","🚶","cardio"],["Bisiklet","Kardiyo","🚴","cardio"],["Kürek ergometresi","Kardiyo","🚣","cardio"],["İp atlama","Kardiyo","⚡","cardio"],["Eliptik bisiklet","Kardiyo","🚴","cardio"],["Merdiven çıkma","Kardiyo","🪜","cardio"],["Yüzme","Kardiyo","🏊","cardio"],
+    ["Lat pulldown","Makine","🏋️","strength"],["Seated cable row","Makine","🏋️","strength"],["Leg press","Makine","🦵","strength"],["Leg extension","Makine","🦵","strength"],["Leg curl","Makine","🦵","strength"],["Chest press makinesi","Makine","🏋️","strength"],["Pec deck","Makine","🏋️","strength"],["Cable crossover","Makine","🏋️","strength"],["Triceps pushdown","Makine","💪","strength"],["Cable face pull","Makine","🏋️","strength"],["Smith machine squat","Makine","🦵","strength"],["Assisted pull-up","Makine","🧗","strength"]
+  ].map(([name,category,icon,type])=>({name,category,icon,type,level: inferLevel(name),bodyPart: inferBodyPart(name)}));
+
+  function inferLevel(name){
+    const n=name.toLocaleLowerCase("tr");
+    if(/muscle.?up|planche|tek kol|one.?arm|front lever|back lever|human flag|handstand push|typewriter|archer|poseidon|russian push|tek kol|dragon flag|tek el/.test(n)) return "İleri";
+    if(/negatif|eğimli|ayak yükselterek|wide|geniş tutuş|dar tutuş|elmas|diamond|decline|incline|dips|dip \(|chin-up|ters tutuş|commando|explosive|patlayıcı|alkış|hindu|dive bomber|pike|l-sit|sternum|weighted|ağırlıklı|ring|halka|assisted|destekli|archer|pseudo-planche|bulgarian|pistol|shrimp|nordic/.test(n)) return "Orta";
+    return "Temel";
+  }
+  function inferBodyPart(name){
+    const n=name.toLocaleLowerCase("tr");
+    if(/şınav|push.?up|dip|planche|handstand/.test(n)) return "Göğüs / İtiş";
+    if(/barfiks|pull.?up|chin.?up|muscle.?up|lever|row|commando|scapular/.test(n)) return "Sırt / Çekiş";
+    if(/squat|lunge|bacak|calf|hamstring|nordic|glute|leg press|leg extension|leg curl/.test(n)) return "Bacak";
+    if(/plank|mekik|crunch|leg raise|dragon flag|hollow|mountain climber|windshield|l-sit|toes-to-bar/.test(n)) return "Karın / Core";
+    if(/koşu|yürüyüş|bisiklet|kürek|ip atlama|eliptik|merdiven|yüzme/.test(n)) return "Kardiyo";
+    return "Diğer";
+  }
+  const calisthenicsCatalog = [
+    ["Diz üstü şınav","Temel","Göğüs / İtiş","💪"],["Duvara şınav","Temel","Göğüs / İtiş","💪"],["Dar tutuş şınav","Temel","Göğüs / İtiş","💪"],
+    ["Geniş tutuş şınav","Temel","Göğüs / İtiş","💪"],["Elmas şınav (Diamond push-up)","Orta","Göğüs / İtiş","💎"],["Archer şınav","İleri","Göğüs / İtiş","🏹"],
+    ["Tek kol şınav","İleri","Göğüs / İtiş","💪"],["Alkış şınavı (Clap push-up)","İleri","Göğüs / İtiş","👏"],["Patlayıcı şınav","İleri","Göğüs / İtiş","⚡"],
+    ["Hindu şınavı","Orta","Göğüs / İtiş","💪"],["Dive bomber şınavı","Orta","Göğüs / İtiş","💪"],["Pike şınavı","Orta","Göğüs / İtiş","🔺"],
+    ["Ayak yükselterek şınav","Orta","Göğüs / İtiş","💪"],["Pseudo-planche şınavı","İleri","Göğüs / İtiş","🤸"],["Planche şınavı","İleri","Göğüs / İtiş","🤸"],
+    ["Russian push-up","İleri","Göğüs / İtiş","💪"],["Poseidon push-up (varyasyon doğrulanmalı)","İleri","Göğüs / İtiş","💪"],
+    ["Klasik barfiks (Pull-up)","Temel","Sırt / Çekiş","🧗"],["Negatif barfiks","Temel","Sırt / Çekiş","🧗"],["Bant destekli barfiks","Temel","Sırt / Çekiş","🧗"],
+    ["Ters tutuş barfiks (Chin-up)","Temel","Sırt / Çekiş","🧗"],["Dar tutuş barfiks","Orta","Sırt / Çekiş","🧗"],["Geniş tutuş barfiks","Orta","Sırt / Çekiş","🧗"],
+    ["Nötr tutuş barfiks","Orta","Sırt / Çekiş","🧗"],["Commando pull-up","Orta","Sırt / Çekiş","🧗"],["Scapular pull-up","Temel","Sırt / Çekiş","🧗"],
+    ["Archer pull-up","İleri","Sırt / Çekiş","🏹"],["Typewriter pull-up","İleri","Sırt / Çekiş","🧗"],["L-sit pull-up","İleri","Sırt / Çekiş","🧗"],
+    ["Chest-to-bar pull-up","İleri","Sırt / Çekiş","🧗"],["Explosive pull-up","İleri","Sırt / Çekiş","⚡"],["Tek kol destekli barfiks","İleri","Sırt / Çekiş","🧗"],
+    ["Tek kol barfiks","İleri","Sırt / Çekiş","🧗"],["Muscle-up","İleri","Sırt / Çekiş","🔥"],["Strict muscle-up","İleri","Sırt / Çekiş","🔥"],
+    ["Negatif muscle-up","İleri","Sırt / Çekiş","🔥"],["Dip (paralel bar)","Temel","Göğüs / İtiş","💪"],["Straight-bar dip","Orta","Göğüs / İtiş","💪"],
+    ["Russian dip","İleri","Göğüs / İtiş","💪"],["Bench dip","Temel","Göğüs / İtiş","💪"],["Ring push-up","Orta","Göğüs / İtiş","⭕"],
+    ["Ring dip","İleri","Göğüs / İtiş","⭕"],["Front lever tuck hold","Orta","Sırt / Çekiş","🤸"],["Front lever","İleri","Sırt / Çekiş","🤸"],
+    ["Back lever","İleri","Sırt / Çekiş","🤸"],["Human flag","İleri","Core / Beceri","🤸"],["Handstand hold","Orta","Omuz / Beceri","🤸"],
+    ["Handstand push-up","İleri","Omuz / Beceri","🤸"],["L-sit hold","Orta","Karın / Core","🔥"],["Hollow body hold","Temel","Karın / Core","🔥"],
+    ["Hanging knee raise","Temel","Karın / Core","🔥"],["Hanging leg raise","Orta","Karın / Core","🔥"],["Toes-to-bar","İleri","Karın / Core","🔥"],
+    ["Dragon flag","İleri","Karın / Core","🔥"],["Pistol squat","İleri","Bacak","🦵"],["Shrimp squat","İleri","Bacak","🦵"],
+    ["Jump squat","Orta","Bacak","🦵"],["Nordic hamstring curl","İleri","Bacak","🦵"],["Ring row","Temel","Sırt / Çekiş","⭕"]
+  ].map(([name,level,bodyPart,icon])=>({name,category:"Vücut ağırlığı",icon,type:"strength",level,bodyPart,aliases:"",calisthenics:true}));
+  const knownNames = new Set(library.map(e=>e.name.toLocaleLowerCase("tr")));
+  calisthenicsCatalog.forEach(e=>{if(!knownNames.has(e.name.toLocaleLowerCase("tr"))) library.push(e);});
+  function inferEquipment(name,category){const n=name.toLocaleLowerCase("tr");if(/dumbbell|dambıl|hammer curl|goblet/.test(n))return "Dumbbell";if(/barbell|halter|deadlift|bench press/.test(n))return "Barbell";if(/machine|makine|cable|kablo|smith|leg press|leg extension|leg curl|assisted pull-up/.test(n))return "Makine";if(/koşu|yürüyüş|bisiklet|kürek|ip atlama|eliptik|merdiven|yüzme/.test(n))return "Kardiyo";if(/ring|halka|muscle.?up|barfiks|pull.?up|chin.?up|dip \(paralel|hanging|toes.to.bar/.test(n))return "Bar ve vücut ağırlığı";return category||"Vücut ağırlığı";}
+  function normalizedLevel(level){return level==="Orta düzey"?"Orta":level==="İleri düzey"?"İleri":level==="Temel düzey"?"Temel":level||"Temel";}
+  library.forEach(e=>{e.level=normalizedLevel(e.level||inferLevel(e.name));e.bodyPart=e.bodyPart||inferBodyPart(e.name);e.equipment=e.equipment||inferEquipment(e.name,e.category);e.aliases=e.aliases||"";});
+
+  let state = loadState();
+  let selectedDate = todayISO();
+  let activeCategory = "Tümü";
+  let activeLevel = "Tümü";
+  let activeBodyPart = "Tümü";
+  let pendingExercise = null;
+  let editingId = null;
+  let toastTimer = null;
+
+  function loadState(){
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){const parsed=JSON.parse(raw); if(parsed && parsed.days && parsed.pinned) { if(!Array.isArray(parsed.savedGroups)) parsed.savedGroups=[]; return parsed; }}
+    } catch(e) {}
+    return {days:{},pinned:[],completedDays:{},savedGroups:[]};
+  }
+  function save(){ localStorage.setItem(STORAGE_KEY,JSON.stringify(state)); }
+  function dayList(date=selectedDate){ return state.days[date] || []; }
+  function ensureDay(date=selectedDate){ if(!state.days[date]) state.days[date]=[]; return state.days[date]; }
+  function findExercise(exId,date=selectedDate){ return dayList(date).find(e=>e.id===exId); }
+  function isCardio(e){return e.type==="cardio";}
+  function targetCount(e){return isCardio(e)||e.mode==="flex"?1:(e.sets||1);}
+  function flexTotal(e){return (e.setProgress||[]).reduce((sum,p)=>sum+(Number(p.actual)||0),0);}
+  function isExerciseComplete(e){
+    if(isCardio(e)) return !!e.done;
+    if(e.mode==="flex") return flexTotal(e)>=(Number(e.targetReps)||1);
+    return (e.setProgress||[]).length >= (e.sets||1) && e.setProgress.every(s=>s.done);
+  }
+  function progress(){
+    const list=dayList(); if(!list.length)return 0;
+    const total=list.reduce((n,e)=>n+targetCount(e),0);
+    const done=list.reduce((n,e)=>n+(isCardio(e)?(e.done?1:0):(e.mode==="flex"?(isExerciseComplete(e)?1:0):(e.setProgress||[]).filter(s=>s.done).length)),0);
+    return Math.round(done/Math.max(total,1)*100);
+  }
+  function dayLocked(date=selectedDate){return !!state.completedDays[date];}
+  function totalReps(){
+    return dayList().reduce((sum,e)=>sum+(e.type==="strength"?(e.setProgress||[]).reduce((s,p)=>s+(Number(p.actual)||0),0):0),0);
+  }
+  function safeText(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+  function showToast(message){
+    $("toast").textContent=message;$("toast").classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>$("toast").classList.remove("show"),2400);
+  }
+  function createProgress(e){
+    return Array.from({length:e.sets||1},()=>({actual:0,done:false}));
+  }
+  function exerciseFromTemplate(template,options={}){
+    const e={id:id(),name:template.name,category:template.category,icon:template.icon,type:template.type||"strength",pinned:!!options.pinned,createdAt:selectedDate};
+    if(e.type==="cardio"){e.target=Number(options.target)||4;e.unit=options.unit||"km";e.done=false;}
+    else if(options.mode==="flex") {e.mode="flex";e.targetReps=Number(options.targetReps)||100;e.sets=1;e.reps=0;e.setProgress=[{actual:0,done:false}];}
+    else if(options.mode==="openSets"){e.mode="openSets";e.sets=Number(options.sets)||10;e.reps=0;e.setProgress=createProgress(e);}
+    else {e.mode="fixed";e.sets=Number(options.sets)||3;e.reps=Number(options.reps)||10;e.setProgress=createProgress(e);}
+    return e;
+  }
+  function addExercise(template,options={}){
+    if(dayLocked()){showToast("Bugün tamamlandı; plan kilitli.");return;}
+    const list=ensureDay();
+    if(list.some(e=>e.name.toLocaleLowerCase("tr")==template.name.toLocaleLowerCase("tr"))){showToast("Bu hareket bugünün planında zaten var.");return;}
+    const e=exerciseFromTemplate(template,options);list.push(e);
+    if(e.pinned && !state.pinned.some(p=>p.name.toLocaleLowerCase("tr")===e.name.toLocaleLowerCase("tr"))){
+      const pin={name:e.name,category:e.category,icon:e.icon,type:e.type,pinned:true};
+      if(e.type==="cardio"){pin.target=e.target;pin.unit=e.unit;}else if(e.mode==="flex"){pin.mode="flex";pin.targetReps=e.targetReps;}else if(e.mode==="openSets"){pin.mode="openSets";pin.sets=e.sets;}else{pin.mode="fixed";pin.sets=e.sets;pin.reps=e.reps;}
+      state.pinned.push(pin);
+    }
+    save();render();$("configDialog").close();$("addDialog").close();showToast(`${e.name} plana eklendi.`);
+  }
+  function syncPinned(e){
+    const idx=state.pinned.findIndex(p=>p.name.toLocaleLowerCase("tr")===e.name.toLocaleLowerCase("tr"));
+    if(e.pinned){
+      const p={name:e.name,category:e.category,icon:e.icon,type:e.type,pinned:true};
+      if(e.type==="cardio"){p.target=e.target;p.unit=e.unit;}else if(e.mode==="flex"){p.mode="flex";p.targetReps=e.targetReps;}else if(e.mode==="openSets"){p.mode="openSets";p.sets=e.sets;}else{p.mode="fixed";p.sets=e.sets;p.reps=e.reps;}
+      if(idx>=0)state.pinned[idx]=p;else state.pinned.push(p);
+    } else if(idx>=0)state.pinned.splice(idx,1);
+  }
+  function togglePin(exId){
+    if(dayLocked())return;
+    const e=findExercise(exId);if(!e)return;
+    e.pinned=!e.pinned;syncPinned(e);save();render();showToast(e.pinned?"Hareket her gün için sabitlendi.":"Hareket günlük plana alındı.");
+  }
+  function removeExercise(exId){
+    if(dayLocked()){showToast("Bugün tamamlandı; plan kilitli.");return;}
+    const e=findExercise(exId);if(!e)return;
+    if(e.pinned){state.pinned=state.pinned.filter(p=>p.name.toLocaleLowerCase("tr")!==e.name.toLocaleLowerCase("tr"));}
+    state.days[selectedDate]=dayList().filter(x=>x.id!==exId);save();render();showToast("Hareket bugünün planından kaldırıldı.");
+  }
+  function setActual(exId,index,value){
+    if(dayLocked())return;
+    const e=findExercise(exId);if(!e)return;
+    const n=Math.max(0,Math.min(100000,Number(value)||0));
+    // Mobile fix: when the user taps the + button, the input first blurs.
+    // Do not rebuild the card here: doing so removes the tapped button before
+    // its click handler fires on touch devices. The following + click will
+    // save the set and render the next one.
+    e.setProgress[index].actual=n;save();
+  }
+  function markSet(exId,index,done){
+    if(dayLocked())return;
+    const e=findExercise(exId);if(!e)return;
+    const p=e.setProgress[index];p.done=done;
+    if(done && !p.actual) p.actual=e.reps;
+    save();render();if(isExerciseComplete(e))showToast(`${e.name} tamamlandı!`);
+  }
+  function addRep(exId,index){
+    if(dayLocked())return;
+    const e=findExercise(exId);if(!e)return;
+    const input=$(`actual-${exId}-${index}`);
+    const value=Math.max(0,Number(input?.value)||0);
+    if(!value){showToast("Kaydetmek için tekrar sayısını yaz.");input?.focus();return;}
+    if(!Array.isArray(e.setProgress))e.setProgress=[];
+    while(e.setProgress.length<=index)e.setProgress.push({actual:0,done:false});
+    const p=e.setProgress[index];p.actual=value;p.done=true;
+    if(e.mode==="flex"){
+      // Keep every completed set and always append the next empty set
+      // until the cumulative target is reached.
+      const target=Math.max(1,Number(e.targetReps)||1);
+      const total=flexTotal(e);
+      const hasOpenSet=e.setProgress.some(set=>!set.done);
+      if(total<target && !hasOpenSet)e.setProgress.push({actual:0,done:false});
+    }
+    save();render();showToast(`${index+1}. set: ${value} tekrar kaydedildi.`);
+  }
+  function toggleCardio(exId){
+    if(dayLocked())return;
+    const e=findExercise(exId);if(!e)return;e.done=!e.done;save();render();
+    if(e.done)showToast(`${e.name} tamamlandı. Harika iş!`);
+  }
+
+  function renderSetPerformance(e){
+    if(e.type==="cardio") return "";
+    const points=(e.setProgress||[]).map((p,i)=>({set:i+1,reps:Math.max(0,Number(p.actual)||0),done:!!p.done,entered:p.actual!==undefined&&p.actual!==null&&p.actual!==""})).filter(p=>p.done||p.entered);
+    if(!points.length) return `<section class="set-performance"><div class="set-performance-head"><strong>Set performansın</strong><span>Tekrar girdikçe grafik oluşur</span></div><div class="performance-foot">Her nokta bir seti gösterir.</div></section>`;
+    const max=Math.max(5,...points.map(p=>p.reps));
+    const w=Math.max(280,points.length*58+48), h=168, left=34,right=w-14,top=18,bottom=128;
+    const x=i=>left+(points.length===1?(right-left)/2:i*(right-left)/(points.length-1));
+    const y=v=>bottom-(v/max)*(bottom-top);
+    const grid=[0,0.25,0.5,0.75,1].map(t=>{const v=Math.round(max*t);const yy=y(v);return `<line x1="${left}" y1="${yy}" x2="${right}" y2="${yy}" class="performance-grid"/><text x="${left-7}" y="${yy+4}" class="performance-axis-label" text-anchor="end">${v}</text>`}).join("");
+    const line=points.map((p,i)=>`${x(i)},${y(p.reps)}`).join(' ');
+    const marks=points.map((p,i)=>`<circle cx="${x(i)}" cy="${y(p.reps)}" r="4.5" class="performance-point"><title>${p.set}. set: ${p.reps} tekrar</title></circle><text x="${x(i)}" y="${y(p.reps)-10}" class="performance-value" text-anchor="middle">${p.reps}</text><text x="${x(i)}" y="150" class="performance-axis-label" text-anchor="middle">${p.set}. set</text>`).join('');
+    const total=points.reduce((n,p)=>n+p.reps,0);
+    return `<section class="set-performance" aria-label="${safeText(e.name)} günlük set performansı"><div class="set-performance-head"><strong>Set performansın</strong><span>${total} toplam tekrar</span></div><div class="performance-chart-wrap"><svg class="performance-line-chart" viewBox="0 0 ${w} ${h}" role="img" aria-label="Setlere göre tekrar grafiği">${grid}<line x1="${left}" y1="${bottom}" x2="${right}" y2="${bottom}" class="performance-axis"/><polyline points="${line}" class="performance-line"/>${marks}</svg></div><div class="performance-foot">Yalnızca ${safeText(prettyDate(selectedDate))} günü · Bu hareketin setleri</div></section>`;
+  }
+
+  function render(){
+    $("selectedDate").value=selectedDate;
+    $("workoutList").innerHTML="";
+    const list=dayList();
+    const locked=dayLocked();
+    document.body.classList.toggle("day-locked",locked);
+    $("openAdd").disabled=locked;$("emptyAdd").disabled=locked;
+    $("openAdd").title=locked?"Bugün tamamlandı":"Alıştırma ekle";
+    $("emptyState").hidden=list.length>0;
+    $("finishWrap").hidden=list.length===0;
+    list.forEach(e=>{
+      const complete=isExerciseComplete(e);
+      const card=document.createElement("article");
+      card.className="exercise-card"+(complete?" is-complete":"");
+      card.innerHTML=`
+        <div class="exercise-top">
+          <div class="exercise-title-wrap">
+            <div class="exercise-icon">${safeText(e.icon||"🏋️")}</div>
+            <div><div class="exercise-name">${safeText(e.name)}</div>
+            <div class="exercise-meta">${safeText(e.category||"Kişisel hareket")} · ${e.type==="cardio" ? `${e.target} ${e.unit==="dk"?"dk":"km"} hedef` : e.mode==="flex" ? `Toplam ${e.targetReps} tekrar hedef` : e.mode==="openSets" ? `${e.sets} serbest set · tekrar hedefi yok` : `${e.sets} set × ${e.reps} tekrar hedef`}${complete?' · <span style="color:var(--green)">Tamamlandı ✓</span>':""}</div></div>
+          </div>
+          <div class="exercise-actions">
+            <button class="tiny-btn pin-btn ${e.pinned?"active":""}" data-action="pin" title="${e.pinned?"Sabitlemeyi kaldır":"Her gün sabitle"}">${e.pinned?"◆ Sabit":"◇ Sabitle"}</button>
+            <button class="tiny-btn" data-action="edit" title="Düzenle">Düzenle</button>
+            <button class="tiny-btn remove-btn" data-action="remove" title="Sil">×</button>
+          </div>
+        </div>
+        ${e.type==="cardio" ? `
+          <div class="cardio-row"><div class="target-pill">Hedef: <strong>${e.target} ${e.unit==="dk"?"dakika":"km"}</strong></div>
+          <button class="done-toggle ${e.done?"checked":""}" data-action="cardio"><span class="check-symbol">${e.done?"✓":"○"}</span>${e.done?"Tamamlandı":"Tamamlandı olarak işaretle"}</button></div>
+        ` : e.mode==="flex" ? `
+          <div class="flex-target"><span>Toplam ilerleme</span><strong>${flexTotal(e)} / ${e.targetReps} tekrar</strong><span>${Math.min(100,Math.round(flexTotal(e)/Math.max(1,e.targetReps)*100))}%</span></div>
+          <div class="sets-row">${(e.setProgress||[]).map((p,i)=>`
+            <div class="set-box ${p.done?"done":""}">
+              <span class="set-number">${i+1}. SET</span>
+              <input class="rep-input" type="number" min="0" max="100000" inputmode="numeric" id="actual-${e.id}-${i}" value="${p.done?p.actual:""}" placeholder="Tekrar" aria-label="${i+1}. set yapılan tekrar" ${p.done?"disabled":""}>
+              <span class="rep-unit">tekrar</span>
+              ${p.done?`<span class="set-number">✓ ${p.actual}</span>`:`<button class="plus-btn" data-action="rep" data-index="${i}" aria-label="${i+1}. seti kaydet">+</button>`}
+            </div>`).join("")}
+          </div>
+        ` : `
+          <div class="sets-row">${(e.setProgress||[]).map((p,i)=>`
+            <div class="set-box ${p.done?"done":""}">
+              <span class="set-number">${i+1}. SET</span>
+              <input class="rep-input" type="number" min="0" max="100000" inputmode="numeric" id="actual-${e.id}-${i}" value="${p.actual||""}" placeholder="${e.mode==="openSets"?"Tekrar":e.reps}" aria-label="${i+1}. set yapılan tekrar">
+              <span class="rep-unit">tekrar</span>
+              <button class="plus-btn" data-action="rep" data-index="${i}" aria-label="${i+1}. seti kaydet">+</button>
+              <input class="set-check" type="checkbox" data-action="set" data-index="${i}" ${p.done?"checked":""} aria-label="${i+1}. set tamamlandı">
+            </div>`).join("")}
+          <span class="set-count-label">${(e.setProgress||[]).filter(p=>p.done).length}/${e.sets} set</span></div>
+        `}
+      ` + renderSetPerformance(e);
+      card.querySelectorAll("[data-action]").forEach(btn=>{
+        btn.addEventListener("click",ev=>{
+          const action=btn.dataset.action;
+          if(action==="pin")togglePin(e.id);
+          if(action==="edit")openEdit(e.id);
+          if(action==="remove")removeExercise(e.id);
+          if(action==="cardio")toggleCardio(e.id);
+          if(action==="rep")addRep(e.id,Number(btn.dataset.index));
+        });
+        if(btn.dataset.action==="set"){
+          btn.addEventListener("change",()=>markSet(e.id,Number(btn.dataset.index),btn.checked));
+        }
+      });
+      card.querySelectorAll(".rep-input").forEach((input,i)=>input.addEventListener("change",()=>setActual(e.id,i,input.value)));
+      if(locked)card.querySelectorAll("button,input").forEach(control=>control.disabled=true);
+      $("workoutList").appendChild(card);
+    });
+    renderStats();renderDistribution();renderMonthlyLeaderboard();renderWeek();renderSavedGroups();
+    const p=progress();
+    const finishedToday=dayLocked();
+    $("finishBtn").disabled=finishedToday||p<100;
+    $("finishBtn").classList.toggle("locked",finishedToday);
+    $("finishBtn").textContent=finishedToday?"✓ Bugün tamamlandı":"✓ Antrenmanı tamamla";
+    $("finishNote").textContent=finishedToday?"Tebrikler! Bugünün planı kilitlendi.":p===100?"Harika! Bugünkü planını tamamladın.":"Tüm setleri ve hareketleri tamamladığında günü bitirebilirsin.";
+    $("finishNote").classList.toggle("success",finishedToday||p===100);
+  }
+  let editingGroupId = null;
+  function groupExerciseSnapshot(e){
+    const out={name:e.name,category:e.category||"Kişisel",icon:e.icon||"🏋️",type:e.type||"strength",pinned:false};
+    if(out.type==="cardio"){out.target=Number(e.target)||4;out.unit=e.unit||"km";}
+    else if(e.mode==="flex"){out.mode="flex";out.targetReps=Number(e.targetReps)||100;}
+    else if(e.mode==="openSets"){out.mode="openSets";out.sets=Number(e.sets)||10;}
+    else{out.mode="fixed";out.sets=Number(e.sets)||3;out.reps=Number(e.reps)||10;}
+    return out;
+  }
+  function renderSavedGroups(){
+    const root=$("savedGroupsList"); if(!root)return;
+    const groups=state.savedGroups||[]; root.innerHTML="";
+    if(!groups.length){root.innerHTML='<div class="saved-empty">Henüz kayıtlı program yok. Günlük planını oluşturup <strong>Grubu kaydet</strong> düğmesine bas.</div>';return;}
+    groups.forEach(g=>{
+      const card=document.createElement("article");card.className="saved-group-card";
+      const summary=(g.exercises||[]).map(e=>`${safeText(e.name)} · ${e.type==="cardio"?`${e.target} ${e.unit==="dk"?"dk":"km"}`:e.mode==="flex"?`serbest · hedef ${e.targetReps}`:e.mode==="openSets"?`${e.sets} serbest set`:`${e.sets}×${e.reps}`}`).join(" <span>•</span> ");
+      card.innerHTML=`<div class="saved-group-copy"><strong>${safeText(g.name)}</strong><div class="saved-group-meta">${(g.exercises||[]).length} hareket</div><div class="saved-group-summary">${summary}</div></div><div class="saved-group-actions"><button type="button" class="tiny-btn" data-group-action="load">Yükle</button><button type="button" class="tiny-btn" data-group-action="edit">Düzenle</button><button type="button" class="tiny-btn remove-btn" data-group-action="delete">Sil</button></div>`;
+      card.querySelector('[data-group-action="load"]').addEventListener("click",()=>loadSavedGroup(g.id));
+      card.querySelector('[data-group-action="edit"]').addEventListener("click",()=>openGroupDialog(g));
+      card.querySelector('[data-group-action="delete"]').addEventListener("click",()=>{if(!confirm(`“${g.name}” kayıtlı grubunu silmek istiyor musun?`))return;state.savedGroups=state.savedGroups.filter(x=>x.id!==g.id);save();renderSavedGroups();showToast("Kayıtlı grup silindi.");});
+      root.appendChild(card);
+    });
+  }
+  function openGroupDialog(group=null){
+    if(!dayList().length && !group){showToast("Önce günlük plana en az bir hareket ekle.");return;}
+    editingGroupId=group?.id||null;
+    $("groupDialogTitle").textContent=group?"Grubu düzenle":"Antrenmanı kaydet";
+    $("groupName").value=group?.name||"";
+    const exercises=group?.exercises||dayList().map(groupExerciseSnapshot);
+    $("groupPreview").innerHTML=exercises.length?exercises.map((e,i)=>`<div class="group-preview-row edit-group-row"><div class="group-exercise-label"><span>${safeText(e.icon||"🏋️")} ${safeText(e.name)}</span><small>${e.type==="cardio"?"Kardiyo":e.mode==="flex"?"Toplam tekrar hedefi":e.mode==="openSets"?"Serbest setler":"Düzenli set"}</small></div>${group?`<div class="group-edit-fields">${e.type==="cardio"?`<label>Hedef<input data-group-index="${i}" data-field="target" type="number" min="0.1" step="0.1" value="${Number(e.target)||4}"></label><label>Birim<select data-group-index="${i}" data-field="unit"><option value="km" ${e.unit!=="dk"?"selected":""}>km</option><option value="dk" ${e.unit==="dk"?"selected":""}>dk</option></select></label>`:e.mode==="flex"?`<label>Toplam hedef<input data-group-index="${i}" data-field="targetReps" type="number" min="1" value="${Number(e.targetReps)||100}"></label>`:e.mode==="openSets"?`<label>Set sayısı<input data-group-index="${i}" data-field="sets" type="number" min="1" max="30" value="${Number(e.sets)||10}"></label>`:`<label>Set<input data-group-index="${i}" data-field="sets" type="number" min="1" max="30" value="${Number(e.sets)||3}"></label><label>Tekrar<input data-group-index="${i}" data-field="reps" type="number" min="1" max="1000" value="${Number(e.reps)||10}"></label>`}</div>`:`<small>${e.type==="cardio"?`${e.target} ${e.unit==="dk"?"dk":"km"}`:e.mode==="flex"?`Serbest · ${e.targetReps} tekrar hedef`:e.mode==="openSets"?`${e.sets} serbest set · hedef yok`:`${e.sets} set × ${e.reps} tekrar`}</small>`}</div>`).join(""):'<p class="saved-empty">Bu grupta henüz hareket yok.</p>';
+    $("groupDialog").showModal();
+  }
+  function saveWorkoutGroup(){
+    const name=$("groupName").value.trim(); if(!name){showToast("Gruba bir isim ver.");$("groupName").focus();return;}
+    let exercises=editingGroupId?(state.savedGroups.find(g=>g.id===editingGroupId)?.exercises||[]):dayList().map(groupExerciseSnapshot);
+    if(!exercises.length){showToast("Kaydedilecek hareket bulunamadı.");return;}
+    if(editingGroupId){
+      exercises=exercises.map((e,i)=>{const updated={...e};$("groupPreview").querySelectorAll(`[data-group-index="${i}"]`).forEach(input=>{const field=input.dataset.field;if(field==="unit")updated.unit=input.value;else if(field==="sets")updated.sets=Math.max(1,Math.min(30,Number(input.value)||1));else if(field==="reps")updated.reps=Math.max(1,Math.min(1000,Number(input.value)||1));else if(field==="targetReps")updated.targetReps=Math.max(1,Math.min(100000,Number(input.value)||100));else if(field==="target")updated.target=Math.max(.1,Number(input.value)||1);});return updated;});
+      const g=state.savedGroups.find(x=>x.id===editingGroupId);if(g){g.name=name;g.exercises=exercises;}
+    }
+    else{state.savedGroups.push({id:id(),name,exercises,createdAt:todayISO()});}
+    save();$("groupDialog").close();renderSavedGroups();showToast(editingGroupId?"Kayıtlı grup güncellendi.":"Antrenman grubu kaydedildi.");editingGroupId=null;
+  }
+  function loadSavedGroup(groupId){
+    if(dayLocked()){showToast("Bugün tamamlandı; plan kilitli.");return;}
+    const group=(state.savedGroups||[]).find(g=>g.id===groupId);if(!group)return;
+    const list=ensureDay();let added=0,skipped=0;
+    group.exercises.forEach(t=>{
+      if(list.some(e=>e.name.toLocaleLowerCase("tr")===t.name.toLocaleLowerCase("tr"))){skipped++;return;}
+      const e=exerciseFromTemplate(t,{pinned:false,mode:t.mode,sets:t.sets,reps:t.reps,targetReps:t.targetReps,target:t.target,unit:t.unit});
+      e.pinned=false;list.push(e);added++;
+    });
+    save();render();showToast(added?`${group.name} yüklendi: ${added} hareket${skipped?`, ${skipped} zaten plandaydı`:""}.`:`Bu gruptaki hareketler zaten günlük planda.`);
+  }
+  function renderStats(){
+    const list=dayList(), p=progress(), done=list.filter(isExerciseComplete).length;
+    $("progressValue").textContent=p+"%";$("progressFill").style.width=p+"%";
+    $("progressCaption").textContent=list.length?(dayLocked()?"Gün tamamlandı ve kilitlendi.":p===100?"Bugünkü hedefini tamamladın!":`${list.reduce((n,e)=>n+(isCardio(e)||e.mode==="flex"?1:e.sets),0)-list.reduce((n,e)=>n+(isCardio(e)?(e.done?1:0):(e.mode==="flex"?(isExerciseComplete(e)?1:0):(e.setProgress||[]).filter(s=>s.done).length)),0)} adım kaldı`):"Başlamak için ilk hareketini ekle.";
+    $("completedValue").innerHTML=`${done} <span class="small-unit">/ ${list.length}</span>`;
+    $("repsValue").textContent=totalReps().toLocaleString("tr-TR");
+    $("pinnedValue").textContent=state.pinned.length;
+  }
+  function renderDistribution(){
+    const map={};
+    const cutoff=shiftDate(selectedDate,-29);
+    Object.entries(state.days).forEach(([date,list])=>{
+      if(date<cutoff||date>selectedDate)return;
+      list.forEach(e=>{
+        const key=e.name;
+        if(!map[key])map[key]={name:key,done:0,total:0};
+        map[key].total++;
+        if(isExerciseComplete(e))map[key].done++;
+      });
+    });
+    const arr=Object.values(map).filter(x=>x.total>0).sort((a,b)=>b.done-a.done||b.total-a.total).slice(0,6);
+    $("distribution").innerHTML="";
+    $("distributionEmpty").hidden=arr.length>0;
+    arr.forEach(x=>{
+      const pct=Math.round(x.done/Math.max(1,x.total)*100);
+      const row=document.createElement("div");row.className="dist-row";
+      row.innerHTML=`<div class="dist-name" title="${safeText(x.name)}">${safeText(x.name)}</div><div class="dist-track"><div class="dist-fill" style="width:${pct}%"></div></div><div class="dist-pct">${pct}%</div>`;
+      $("distribution").appendChild(row);
+    });
+  }
+  let monthlyLeaderboardSelectedMonth = null;
+  function renderMonthlyLeaderboard(){
+    const now=todayISO();
+    const currentMonth=now.slice(0,7);
+    const knownMonths=new Set([currentMonth]);
+    Object.keys(state.days||{}).forEach(date=>{if(/^\d{4}-\d{2}-\d{2}$/.test(date)&&date<=now)knownMonths.add(date.slice(0,7));});
+    const months=[...knownMonths].sort((a,b)=>a.localeCompare(b));
+    const earliest=months[0]||currentMonth;
+    if(!monthlyLeaderboardSelectedMonth || monthlyLeaderboardSelectedMonth>currentMonth) monthlyLeaderboardSelectedMonth=currentMonth;
+    if(monthlyLeaderboardSelectedMonth<earliest) monthlyLeaderboardSelectedMonth=earliest;
+    const month=monthlyLeaderboardSelectedMonth;
+    const prev=$("monthlyMonthPrev"), next=$("monthlyMonthNext");
+    if(prev&&!prev.dataset.bound){prev.addEventListener("click",()=>{const d=new Date(monthlyLeaderboardSelectedMonth+"-15T12:00:00");d.setMonth(d.getMonth()-1);monthlyLeaderboardSelectedMonth=d.toISOString().slice(0,7);renderMonthlyLeaderboard();});prev.dataset.bound="1";}
+    if(next&&!next.dataset.bound){next.addEventListener("click",()=>{const d=new Date(monthlyLeaderboardSelectedMonth+"-15T12:00:00");d.setMonth(d.getMonth()+1);const candidate=d.toISOString().slice(0,7);if(candidate<=currentMonth){monthlyLeaderboardSelectedMonth=candidate;renderMonthlyLeaderboard();}});next.dataset.bound="1";}
+    const label=new Date(month+"-15T12:00:00").toLocaleDateString("tr-TR",{month:"long",year:"numeric"});
+    const labelEl=$("monthlyLeaderboardMonthLabel"); if(labelEl)labelEl.textContent=label.charAt(0).toLocaleUpperCase("tr-TR")+label.slice(1);
+    if(prev)prev.disabled=month<=earliest;
+    if(next)next.disabled=month>=currentMonth;
+    const totals=new Map();
+    Object.entries(state.days||{}).forEach(([date,list])=>{
+      if(!date.startsWith(month)||date>now||!Array.isArray(list))return;
+      list.forEach(e=>{
+        if(!e||e.type==="cardio")return;
+        const reps=(e.setProgress||[]).reduce((sum,set)=>sum+(Number(set.actual)||0),0);
+        if(reps<=0)return;
+        const key=String(e.name||"Hareket").trim();
+        totals.set(key,(totals.get(key)||0)+reps);
+      });
+    });
+    const rows=[...totals.entries()].map(([name,reps])=>({name,reps})).sort((a,b)=>b.reps-a.reps||a.name.localeCompare(b.name,"tr"));
+    const list=$("monthlyLeaderboard"); const empty=$("monthlyLeaderboardEmpty");
+    if(!list||!empty)return;
+    $("monthlyLeaderboardCaption").textContent=label+" · Hareket başına toplam tekrar";
+    list.innerHTML=""; empty.hidden=rows.length>0;
+    empty.textContent="Bu ay için kaydedilmiş tekrar bulunamadı.";
+    rows.forEach((item,index)=>{const row=document.createElement("div");row.className="dist-row monthly-rank-row";row.innerHTML=`<div class="monthly-rank">${index+1}.</div><div class="dist-name" title="${safeText(item.name)}">${safeText(item.name)}</div><div class="monthly-reps">${item.reps.toLocaleString("tr-TR")} <span>tekrar</span></div>`;list.appendChild(row);});
+    renderMonthlyGoals();
+  }
+  const MONTHLY_GOALS_KEY = "setly-monthly-goals-v1";
+  function loadMonthlyGoals(){try{return JSON.parse(localStorage.getItem(MONTHLY_GOALS_KEY)||"{}")}catch(_){return {};}}
+  let monthlyGoals = loadMonthlyGoals();
+  function saveMonthlyGoals(){localStorage.setItem(MONTHLY_GOALS_KEY,JSON.stringify(monthlyGoals));}
+  function monthlyExerciseTotals(month){
+    const totals=new Map();
+    Object.entries(state.days||{}).forEach(([date,list])=>{
+      if(!date.startsWith(month)||!Array.isArray(list))return;
+      list.forEach(e=>{
+        if(!e||e.type==="cardio")return;
+        const name=String(e.name||"").trim(); if(!name)return;
+        const reps=(e.setProgress||[]).reduce((sum,set)=>sum+(Number(set.actual)||0),0);
+        if(reps>0)totals.set(name,(totals.get(name)||0)+reps);
+      });
+    });
+    return totals;
+  }
+  function renderMonthlyGoals(){
+    const month=monthlyLeaderboardSelectedMonth||todayISO().slice(0,7);
+    const list=$("monthlyGoalsList"),empty=$("monthlyGoalsEmpty"),options=$("monthlyGoalExerciseOptions");
+    if(!list||!empty)return;
+    const totals=monthlyExerciseTotals(month);
+    const names=new Set([...totals.keys(),...(monthlyGoals[month]||[]).map(g=>g.name)]);
+    if(options){options.innerHTML="";[...new Set([...library.map(e=>e.name),...names])].sort((a,b)=>a.localeCompare(b,"tr")).forEach(name=>{const opt=document.createElement("option");opt.value=name;options.appendChild(opt);});}
+    const goals=monthlyGoals[month]||[];
+    list.innerHTML="";empty.hidden=goals.length>0;
+    goals.forEach(goal=>{
+      const done=totals.get(goal.name)||0,target=Math.max(1,Number(goal.target)||1),pct=Math.floor(done/target*100);
+      const tier=pct>=200?"diamond":pct>=100?"gold":"base";
+      const ringPct=Math.min(100,done/target*100);
+      const circumference=2*Math.PI*49,offset=circumference-(circumference*ringPct/100);
+      const card=document.createElement("article");card.className=`monthly-goal-card ${tier}`;
+      card.innerHTML=`<div class="monthly-goal-card-head"><div><strong>${safeText(goal.name)}</strong><small>${target.toLocaleString("tr-TR")} tekrar hedef</small></div><button type="button" class="monthly-goal-delete" aria-label="${safeText(goal.name)} hedefini sil">×</button></div>
+        <div class="goal-ring-wrap"><div class="goal-aura"></div><svg class="goal-ring" viewBox="0 0 120 120" role="img" aria-label="${done} tekrar, yüzde ${pct}"><circle class="goal-ring-track" cx="60" cy="60" r="49"></circle><circle class="goal-ring-progress" cx="60" cy="60" r="49" style="stroke-dasharray:${circumference};stroke-dashoffset:${offset}"></circle></svg><div class="goal-ring-center"><strong>${done.toLocaleString("tr-TR")}</strong><span>TEKRAR</span><b>%${pct.toLocaleString("tr-TR")}</b></div></div>
+        <div class="monthly-goal-foot"><span>${done.toLocaleString("tr-TR")} / ${target.toLocaleString("tr-TR")}</span><span>${pct>=200?"ELMAS SEVİYESİ":pct>=100?"HEDEF TAMAMLANDI":`${Math.max(0,target-done).toLocaleString("tr-TR")} tekrar kaldı`}</span></div>`;
+      card.querySelector(".monthly-goal-delete").addEventListener("click",()=>{monthlyGoals[month]=goals.filter(g=>g.id!==goal.id);saveMonthlyGoals();renderMonthlyGoals();});
+      list.appendChild(card);
+    });
+  }
+  $("monthlyGoalForm")?.addEventListener("submit",event=>{
+    event.preventDefault();const name=$("monthlyGoalExercise").value.trim();const target=Number($("monthlyGoalTarget").value);
+    if(!name||!Number.isFinite(target)||target<1)return;
+    const month=monthlyLeaderboardSelectedMonth||todayISO().slice(0,7);if(!monthlyGoals[month])monthlyGoals[month]=[];
+    const existing=monthlyGoals[month].find(g=>g.name.toLocaleLowerCase("tr")===name.toLocaleLowerCase("tr"));
+    if(existing)existing.target=target;else monthlyGoals[month].push({id:id(),name,target});
+    saveMonthlyGoals();$("monthlyGoalExercise").value="";$("monthlyGoalTarget").value="";renderMonthlyGoals();
+  });
+
+  function renderWeek(){
+    const names=["Pzt","Sal","Çar","Per","Cum","Cmt","Paz"];
+    const d=new Date(selectedDate+"T12:00:00");const dow=(d.getDay()+6)%7;const monday=shiftDate(selectedDate,-dow);
+    $("weekStrip").innerHTML="";
+    let finished=0;
+    for(let i=0;i<7;i++){
+      const date=shiftDate(monday,i),list=state.days[date]||[];
+      const p=list.length?list.filter(isExerciseComplete).length/list.length:0;
+      const cls=p===1&&list.length?"done":p>0?"partial":"";
+      if(p===1&&list.length)finished++;
+      const day=document.createElement("div");day.className="week-day";
+      day.innerHTML=`<div class="week-dot ${cls}" title="${prettyDate(date)}">${p===1&&list.length?"✓":p>0?"·":"—"}</div><small>${names[i]}</small>`;
+      $("weekStrip").appendChild(day);
+    }
+    $("weekSummary").textContent=`${finished} gün tamamlandı`;
+  }
+  function openAdd(){
+    $("exerciseSearch").value="";activeCategory="Tümü";activeLevel="Tümü";activeBodyPart="Tümü";
+    document.querySelectorAll("[data-category]").forEach(b=>b.classList.toggle("active",b.dataset.category===activeCategory));
+    document.querySelectorAll(".level-chip").forEach(b=>b.classList.toggle("active",b.dataset.level===activeLevel));
+    document.querySelectorAll(".body-chip").forEach(b=>b.classList.toggle("active",b.dataset.body===activeBodyPart));
+    renderLibrary();$("addDialog").showModal();setTimeout(()=>$("exerciseSearch").focus(),60);
+  }
+  function renderLibrary(){
+    const q=$("exerciseSearch").value.trim().toLocaleLowerCase("tr");
+    const list=library.filter(e=>{
+      const aliases=(e.aliases||"").toLocaleLowerCase("tr");
+      const fields=[e.name,e.category,e.equipment,e.level,e.bodyPart,aliases].join(" ").toLocaleLowerCase("tr");
+      return (activeCategory==="Tümü"||e.category===activeCategory||e.equipment===activeCategory) &&
+        (activeLevel==="Tümü"||normalizedLevel(e.level)===activeLevel) &&
+        (activeBodyPart==="Tümü"||(e.bodyPart||"Diğer")===activeBodyPart) && (!q||fields.includes(q));
+    });
+    $("exerciseResults").innerHTML="";
+    if(!list.length){$("exerciseResults").innerHTML='<div class="no-results">Bu filtrelerde hareket bulunamadı. Arama veya seviye seçimini değiştirebilirsin.</div>';return;}
+    list.forEach(e=>{
+      const b=document.createElement("button");b.type="button";b.className="exercise-result";
+      const level=e.level||"Temel", body=e.bodyPart||e.category;
+      b.innerHTML=`<span class="result-icon">${safeText(e.icon)}</span><span class="result-copy"><span class="result-name">${safeText(e.name)}</span><span class="result-category">${safeText(body)} · ${safeText(level)}</span></span><span class="result-add">＋</span>`;
+      b.addEventListener("click",()=>openConfig(e));$("exerciseResults").appendChild(b);
+    });
+  }
+  function openConfig(template){
+    pendingExercise=template;
+    $("configTitle").textContent=template.name;
+    $("configDescription").textContent=template.type==="cardio"?"Koşu, yürüyüş veya kardiyo hedefini mesafe ya da süre olarak belirle.":"Düzenli setleri, tekrar hedefi olmayan serbest setleri veya toplam tekrar hedefini seçebilirsin.";
+    const cardio=template.type==="cardio";
+    $("strengthFields").hidden=cardio;$("cardioFields").hidden=!cardio;
+    $("repMode").value="fixed";$("fixedFields").hidden=false;$("openSetFields").hidden=true;$("flexFields").hidden=true;
+    $("setCount").value=3;$("repCount").value=10;$("totalTarget").value=100;$("distanceCount").value=4;$("cardioType").value="km";$("pinOnAdd").checked=true;
+    $("addDialog").close();$("configDialog").showModal();
+  }
+  function openEdit(exId){
+    const e=findExercise(exId);if(!e)return;editingId=exId;
+    $("editTitle").textContent=e.name;$("editName").value=e.name;
+    const cardio=e.type==="cardio";$("editStrengthFields").hidden=cardio;$("editCardioFields").hidden=!cardio;
+    if(cardio){$("editDistance").value=e.target;$("editCardioType").value=e.unit||"km";}
+    else{$("editRepMode").value=e.mode==="flex"?"flex":e.mode==="openSets"?"openSets":"fixed";$("editFixedFields").hidden=e.mode!=="fixed";$("editOpenSetFields").hidden=e.mode!=="openSets";$("editFlexFields").hidden=e.mode!=="flex";$("editSets").value=e.sets||3;$("editOpenSetCount").value=e.sets||10;$("editReps").value=e.reps||10;$("editTarget").value=e.targetReps||100;}
+    $("editDialog").showModal();
+  }
+  function saveEdit(){
+    const e=findExercise(editingId);if(!e)return;
+    const oldName=e.name;e.name=$("editName").value.trim()||e.name;
+    if(e.type==="cardio"){e.target=Math.max(.1,Number($("editDistance").value)||1);e.unit=$("editCardioType").value;}
+    else if($("editRepMode").value==="flex"){
+      const wasFlex=e.mode==="flex";
+      e.mode="flex";e.targetReps=Math.max(1,Math.min(100000,Number($("editTarget").value)||100));e.sets=1;e.reps=0;
+      if(!wasFlex)e.setProgress=[{actual:0,done:false}];
+      if(!e.setProgress||!e.setProgress.length)e.setProgress=[{actual:0,done:false}];
+      if(e.setProgress.every(p=>p.done)&&flexTotal(e)<e.targetReps)e.setProgress.push({actual:0,done:false});
+    } else if($("editRepMode").value==="openSets"){
+      const wasOpen=e.mode==="openSets";const sets=Math.max(1,Math.min(30,Number($("editOpenSetCount").value)||10));const old=e.setProgress||[];e.mode="openSets";e.sets=sets;e.reps=0;e.setProgress=Array.from({length:sets},(_,i)=>old[i]||({actual:0,done:false}));
+    } else {
+      const sets=Math.max(1,Math.min(30,Number($("editSets").value)||1));
+      const reps=Math.max(1,Math.min(1000,Number($("editReps").value)||1));
+      const old=e.setProgress||[];e.mode="fixed";e.sets=sets;e.reps=reps;
+      e.setProgress=Array.from({length:sets},(_,i)=>old[i]||({actual:0,done:false}));
+    }
+    if(e.pinned)syncPinned(e);
+    if(oldName!==e.name && e.pinned)state.pinned=state.pinned.filter(p=>p.name.toLocaleLowerCase("tr")!==oldName.toLocaleLowerCase("tr"));
+    save();$("editDialog").close();render();showToast("Hareket güncellendi.");
+  }
+  function addCustom(){
+    const name=$("customName").value.trim();if(!name){showToast("Önce hareketin adını yaz.");return;}
+    const template={name,category:"Kişisel",icon:"🏋️",type:"strength"};
+    $("customName").value="";openConfig(template);
+  }
+  let generatedReadyPlan = null;
+  function openReadyPrograms(){
+    if(dayLocked()){showToast("Bugün tamamlandı; yeni program eklenemez.");return;}
+    $("aiPrompt").value="";$("aiPreview").innerHTML="";$("aiApply").hidden=true;
+    $("aiDialog").showModal();
+  }
+  function buildLocalPlan(goal,level,style,minutes,equipment,prompt){
+    const g=(goal+" "+(prompt||"")).toLocaleLowerCase("tr");let target="Tüm vücut";
+    if(/göğüs|şınav|itiş/.test(g))target="Göğüs";else if(/sırt|barfiks|çekiş|biceps/.test(g))target="Sırt ve biceps";else if(/bacak|alt vücut|kalça/.test(g))target="Bacak";else if(/karın|core/.test(g))target="Karın / core";else if(/omuz|triceps/.test(g))target="Omuz ve triceps";
+    const db={
+      "Göğüs":[["Şınav",3,[10,15,20],75,"body"],["Geniş tutuş şınav",3,[8,12,15],75,"body"],["Ayak yükselterek şınav",3,[6,10,12],90,"body"],["Dip (paralel bar)",2,[5,8,12],90,"bar"],["Dumbbell bench press",3,[8,10,12],90,"db"],["Dumbbell fly",2,[10,12,15],60,"db"],["Diz üstü şınav",2,[8,12,15],60,"body"]],
+      "Sırt ve biceps":[["Negatif barfiks",3,[3,5,6],90,"bar"],["Klasik barfiks (Pull-up)",3,[3,6,10],120,"bar"],["Ters tutuş barfiks (chin-up)",3,[4,7,10],90,"bar"],["Dumbbell row",3,[8,12,15],75,"db"],["Tek kol dumbbell row",3,[8,10,12],75,"db"],["Dumbbell biceps curl",3,[8,12,15],60,"db"]],
+      "Bacak":[["Squat",3,[12,15,20],60,"body"],["Lunge",3,[8,10,12],60,"body"],["Bulgarian split squat",3,[6,10,12],75,"body"],["Glute bridge",3,[12,15,20],60,"body"],["Calf raise",3,[12,18,25],45,"body"],["Goblet squat",3,[8,12,15],75,"db"],["Dumbbell Romanian deadlift",3,[8,10,12],90,"db"]],
+      "Karın / core":[["Plank",3,[20,35,45],45,"body"],["Side plank",2,[15,25,35],45,"body"],["Crunch",3,[12,18,25],45,"body"],["Leg raise",3,[6,10,15],60,"body"],["Mountain climber",3,[20,30,40],45,"body"]],
+      "Omuz ve triceps":[["Pike şınavı",3,[5,8,12],75,"body"],["Dumbbell shoulder press",3,[8,10,12],75,"db"],["Dumbbell lateral raise",3,[10,12,15],60,"db"],["Dar tutuş şınav",3,[6,10,15],60,"body"],["Dumbbell triceps extension",3,[8,12,15],60,"db"],["Bench dip",2,[6,10,12],75,"body"]]
+    };
+    let pool=target==="Tüm vücut"?[db["Göğüs"][0],db["Sırt ve biceps"][0],db["Bacak"][0],db["Bacak"][3],db["Karın / core"][0],db["Omuz ve triceps"][0]]:(db[target]||db["Göğüs"]).slice();
+    if(style==="Kalisteniks")pool=pool.filter(x=>x[4]==="body"||x[4]==="bar");if(style==="Fitness")pool=pool.filter(x=>x[4]==="db");
+    if(equipment==="Ekipmansız")pool=pool.filter(x=>x[4]==="body"&&!/barfiks|paralel bar/i.test(x[0]));else if(equipment==="Bar ve vücut ağırlığı")pool=pool.filter(x=>x[4]==="body"||x[4]==="bar");else if(equipment==="Dambıl ve ağırlıklar")pool=pool.filter(x=>x[4]==="db");else if(equipment==="Halkalar ve bar")pool=pool.filter(x=>x[4]==="bar"||x[4]==="body");
+    if(level==="Temel")pool=pool.filter(x=>!/(ayak yükselterek|dip \(paralel|barfiks \(pull-up\)|pike şınavı)/i.test(x[0]));
+    if(!pool.length)pool=(db[target]||db["Tüm vücut"]||db["Göğüs"]).slice(0,3);
+    const count=Number(minutes)<=20?3:Number(minutes)<=30?4:Number(minutes)<=45?5:6;pool=pool.slice(0,count);
+    const li=level==="Temel"?0:level==="İleri"?2:1;
+    return {title:target+" · "+style,duration:minutes,level,exercises:pool.map(x=>({name:x[0],sets:level==="İleri"?Math.min(4,x[1]+1):x[1],reps:x[2][li],rest:x[3]}))};
+  }
+  async function generateReadyWorkout(){
+    const prompt=$("aiPrompt").value.trim();
+    const goal=$("aiGoal").value, level=$("aiLevel").value, style=$("aiStyle").value, minutes=$("aiDuration").value, equipment=$("aiEquipment").value;
+    if(!prompt && !goal){showToast("Hedefini yaz veya seç.");return;}
+    
+    const button=$("aiGenerate");button.disabled=true;button.textContent="Program hazırlanıyor…";
+    try{
+      let plan;
+      // Yerel hazır program oluşturucu: ağ isteği/API anahtarı kullanmaz.
+      plan=buildLocalPlan(goal,level,style,minutes,equipment,prompt);
+
+      if(!plan||!Array.isArray(plan.exercises)||!plan.exercises.length)throw new Error("Programda geçerli hareket bulunamadı.");
+      generatedReadyPlan={...plan,exercises:plan.exercises.filter(x=>x&&typeof x.name==="string"&&x.name.trim()).slice(0,12)};
+      $("aiPreview").innerHTML=`<div class="ai-plan-title"><strong>${safeText(generatedReadyPlan.title||"Günlük program")}</strong><span>${safeText(String(generatedReadyPlan.duration||minutes))} dakika · ${safeText(generatedReadyPlan.level||level)}</span></div>`+generatedReadyPlan.exercises.map((e,i)=>`<div class="ai-plan-row"><span class="ai-plan-number">${i+1}</span><div><strong>${safeText(e.name)}</strong><small>${Math.max(1,Number(e.sets)||3)} set × ${Math.max(1,Number(e.reps)||10)} tekrar · ${Math.max(30,Number(e.rest)||60)} sn dinlenme</small></div></div>`).join("");
+      $("aiApply").hidden=false;
+    }catch(err){showToast(err.message||"Program oluşturulamadı.");}
+    finally{button.disabled=false;button.textContent="Program oluştur";}
+  }
+  function applyReadyWorkout(){
+    if(!generatedReadyPlan||dayLocked())return;
+    const existing=dayList().length>0;
+    if(existing){
+      const choice=prompt("Bugünkü planında zaten hareketler var. Mevcut plana eklemek için EKLE, bugünkü planı değiştirmek için DEGISTIR yaz.");
+      if(!choice)return;
+      const normalized=choice.trim().toLocaleUpperCase("tr");
+      if(normalized!=="EKLE"&&normalized!=="DEGISTIR"){showToast("İşlem iptal edildi. EKLE veya DEGISTIR yaz.");return;}
+      if(normalized==="DEGISTIR"&&!confirm("Bugünkü antrenman listesini değiştirmek istiyor musun? Bu işlem yalnızca bugünün listesini değiştirir; kayıtlı grupları silmez."))return;
+      if(normalized==="DEGISTIR")state.days[selectedDate]=[];
+    }
+    let added=0;
+    generatedReadyPlan.exercises.forEach(item=>{
+      const template=library.find(e=>e.name.toLocaleLowerCase("tr")===item.name.toLocaleLowerCase("tr"))||{name:item.name,category:"Vücut ağırlığı",icon:"💪",type:"strength",level:"Temel"};
+      const duplicate=dayList().some(e=>e.name.toLocaleLowerCase("tr")===template.name.toLocaleLowerCase("tr"));
+      if(!duplicate){addExercise(template,{pinned:false,mode:"fixed",sets:Math.max(1,Math.min(30,Number(item.sets)||3)),reps:Math.max(1,Math.min(1000,Number(item.reps)||10))});added++;}
+    });
+    $("aiDialog").close();render();showToast(added?`${added} hareket günlük plana eklendi.`:"Bu hareketler zaten günlük planında var.");
+  }
+
+  function finishWorkout(){
+    if(dayLocked()||progress()<100)return;
+    state.completedDays[selectedDate]=true;save();render();
+    showToast("Tebrikler! Antrenmanın tamamlandı. 🎉");
+  }
+  $("openAdd").addEventListener("click",openAdd);$("emptyAdd").addEventListener("click",openAdd);
+  $("exerciseSearch").addEventListener("input",renderLibrary);
+  document.querySelectorAll(".level-chip").forEach(b=>b.addEventListener("click",()=>{activeLevel=b.dataset.level;document.querySelectorAll(".level-chip").forEach(x=>x.classList.toggle("active",x===b));renderLibrary();}));
+  document.querySelectorAll(".body-chip").forEach(b=>b.addEventListener("click",()=>{activeBodyPart=b.dataset.body;document.querySelectorAll(".body-chip").forEach(x=>x.classList.toggle("active",x===b));renderLibrary();}));
+  $("openReadyPrograms")?.addEventListener("click",openReadyPrograms);
+  $("aiGenerate")?.addEventListener("click",generateReadyWorkout);
+  $("aiApply")?.addEventListener("click",applyReadyWorkout);
+  $("aiCancel")?.addEventListener("click",()=>$("aiDialog").close());
+
+  document.querySelectorAll("[data-category]").forEach(b=>b.addEventListener("click",()=>{activeCategory=b.dataset.category;document.querySelectorAll("[data-category]").forEach(x=>x.classList.toggle("active",x===b));renderLibrary();}));
+  document.querySelectorAll("[data-level]").forEach(b=>b.addEventListener("click",()=>{activeLevel=b.dataset.level;document.querySelectorAll("[data-level]").forEach(x=>x.classList.toggle("active",x===b));renderLibrary();}));
+  document.querySelectorAll("[data-body]").forEach(b=>b.addEventListener("click",()=>{activeBodyPart=b.dataset.body;document.querySelectorAll("[data-body]").forEach(x=>x.classList.toggle("active",x===b));renderLibrary();}));
+  $("addCustom").addEventListener("click",addCustom);$("customName").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addCustom();}});
+  $("confirmAdd").addEventListener("click",()=>{
+    if(!pendingExercise||dayLocked())return;
+    const cardio=pendingExercise.type==="cardio";
+    const options={pinned:$("pinOnAdd").checked};
+    if(cardio){options.target=Number($("distanceCount").value)||4;options.unit=$("cardioType").value;}
+    else if($("repMode").value==="flex"){options.mode="flex";options.targetReps=Number($("totalTarget").value)||100;}
+    else if($("repMode").value==="openSets"){options.mode="openSets";options.sets=Number($("openSetCount").value)||10;}
+    else{options.mode="fixed";options.sets=Number($("setCount").value)||3;options.reps=Number($("repCount").value)||10;}
+    addExercise(pendingExercise,options);
+  });
+  $("cancelConfig").addEventListener("click",()=>$("configDialog").close());
+  $("saveEdit").addEventListener("click",()=>{if(!dayLocked())saveEdit();});
+  $("deleteExercise").addEventListener("click",()=>{if(editingId&&!dayLocked()){removeExercise(editingId);$("editDialog").close();}});
+  $("finishBtn").addEventListener("click",finishWorkout);
+  $("saveWorkoutGroup").addEventListener("click",()=>openGroupDialog());
+  $("confirmGroupSave").addEventListener("click",saveWorkoutGroup);
+  $("cancelGroup").addEventListener("click",()=>$("groupDialog").close());
+  $("repMode").addEventListener("change",()=>{const m=$("repMode").value;$("fixedFields").hidden=m!=="fixed";$("openSetFields").hidden=m!=="openSets";$("flexFields").hidden=m!=="flex";});
+  $("editRepMode").addEventListener("change",()=>{const m=$("editRepMode").value;$("editFixedFields").hidden=m!=="fixed";$("editOpenSetFields").hidden=m!=="openSets";$("editFlexFields").hidden=m!=="flex";});
+  $("selectedDate").addEventListener("change",e=>{if(e.target.value){selectedDate=e.target.value;ensurePinnedDay(selectedDate);render();}});
+  $("prevDay").addEventListener("click",()=>{selectedDate=shiftDate(selectedDate,-1);ensurePinnedDay(selectedDate);render();});
+  $("nextDay").addEventListener("click",()=>{selectedDate=shiftDate(selectedDate,1);ensurePinnedDay(selectedDate);render();});
+  $("todayBtn").addEventListener("click",()=>{selectedDate=todayISO();ensurePinnedDay(selectedDate);render();});
+  function ensurePinnedDay(date){
+    if(!state.days[date])state.days[date]=[];
+    if(state.completedDays[date]){save();return;}
+    const list=state.days[date];
+    state.pinned.forEach(p=>{
+      if(!list.some(e=>e.name.toLocaleLowerCase("tr")===p.name.toLocaleLowerCase("tr"))){
+        const e={...p,id:id(),pinned:true,createdAt:date};
+        if(e.type==="cardio"){e.done=false;e.target=Number(e.target)||4;e.unit=e.unit||"km";}
+        else if(e.mode==="flex"){e.targetReps=Number(e.targetReps)||100;e.sets=1;e.reps=0;e.setProgress=[{actual:0,done:false}];}
+        else if(e.mode==="openSets"){e.sets=Number(e.sets)||10;e.reps=0;e.setProgress=createProgress(e);}
+        else{e.mode="fixed";e.sets=Number(e.sets)||3;e.reps=Number(e.reps)||10;e.setProgress=createProgress(e);}
+        list.push(e);
+      }
+    });
+    save();
+  }
+  // Daily plans are snapshots. Only pinned exercises are carried into another date.
+  ensurePinnedDay(selectedDate);
+  if ("serviceWorker" in navigator && location.protocol !== "file:") {
+    window.addEventListener("load", () => {
+      const swUrl = new URL("./sw.js", location.href);
+      const appScope = new URL("./", location.href).pathname;
+      navigator.serviceWorker.register(swUrl.href, { scope: appScope }).catch(() => {
+        // The app remains usable online even if offline support cannot be registered.
+      });
+    });
+  }
+  render();
+})();

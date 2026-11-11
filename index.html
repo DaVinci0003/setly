@@ -92,6 +92,19 @@
             <div id="distribution" class="distribution"></div>
             <div id="distributionEmpty" class="muted-empty">Veri biriktikçe en sık yaptığın hareketleri burada göreceksin.</div>
           </section>
+          <section class="panel monthly-goals-panel">
+            <div class="panel-heading compact">
+              <div><h2>AYLIK HAREKET HEDEFLERİ</h2><p>Her hareket için ayrı hedef ve dairesel ilerleme</p></div>
+            </div>
+            <form id="monthlyGoalForm" class="monthly-goal-form">
+              <label>Hareket adı<input id="monthlyGoalExercise" list="monthlyGoalExerciseOptions" placeholder="Örn. Şınav" maxlength="60" required></label>
+              <datalist id="monthlyGoalExerciseOptions"></datalist>
+              <label>Aylık tekrar hedefi<input id="monthlyGoalTarget" type="number" min="1" max="1000000" step="1" placeholder="1000" required></label>
+              <button class="primary-btn" type="submit">＋ Hedef ekle</button>
+            </form>
+            <div id="monthlyGoalsList" class="monthly-goals-list"></div>
+            <div id="monthlyGoalsEmpty" class="muted-empty">Henüz aylık hedef eklemedin. Bir hareket seçip hedef belirleyebilirsin.</div>
+          </section>
           <section class="panel monthly-leaderboard-panel">
             <div class="panel-heading compact">
               <div><h2>AYLIK TEKRAR SIRALAMASI</h2><p id="monthlyLeaderboardCaption">Seçtiğin ayın toplam tekrarları</p></div>

@@ -401,7 +401,56 @@
     list.innerHTML=""; empty.hidden=rows.length>0;
     empty.textContent="Bu ay için kaydedilmiş tekrar bulunamadı.";
     rows.forEach((item,index)=>{const row=document.createElement("div");row.className="dist-row monthly-rank-row";row.innerHTML=`<div class="monthly-rank">${index+1}.</div><div class="dist-name" title="${safeText(item.name)}">${safeText(item.name)}</div><div class="monthly-reps">${item.reps.toLocaleString("tr-TR")} <span>tekrar</span></div>`;list.appendChild(row);});
+    renderMonthlyGoals();
   }
+  const MONTHLY_GOALS_KEY = "setly-monthly-goals-v1";
+  function loadMonthlyGoals(){try{return JSON.parse(localStorage.getItem(MONTHLY_GOALS_KEY)||"{}")}catch(_){return {};}}
+  let monthlyGoals = loadMonthlyGoals();
+  function saveMonthlyGoals(){localStorage.setItem(MONTHLY_GOALS_KEY,JSON.stringify(monthlyGoals));}
+  function monthlyExerciseTotals(month){
+    const totals=new Map();
+    Object.entries(state.days||{}).forEach(([date,list])=>{
+      if(!date.startsWith(month)||!Array.isArray(list))return;
+      list.forEach(e=>{
+        if(!e||e.type==="cardio")return;
+        const name=String(e.name||"").trim(); if(!name)return;
+        const reps=(e.setProgress||[]).reduce((sum,set)=>sum+(Number(set.actual)||0),0);
+        if(reps>0)totals.set(name,(totals.get(name)||0)+reps);
+      });
+    });
+    return totals;
+  }
+  function renderMonthlyGoals(){
+    const month=monthlyLeaderboardSelectedMonth||todayISO().slice(0,7);
+    const list=$("monthlyGoalsList"),empty=$("monthlyGoalsEmpty"),options=$("monthlyGoalExerciseOptions");
+    if(!list||!empty)return;
+    const totals=monthlyExerciseTotals(month);
+    const names=new Set([...totals.keys(),...(monthlyGoals[month]||[]).map(g=>g.name)]);
+    if(options){options.innerHTML="";[...new Set([...library.map(e=>e.name),...names])].sort((a,b)=>a.localeCompare(b,"tr")).forEach(name=>{const opt=document.createElement("option");opt.value=name;options.appendChild(opt);});}
+    const goals=monthlyGoals[month]||[];
+    list.innerHTML="";empty.hidden=goals.length>0;
+    goals.forEach(goal=>{
+      const done=totals.get(goal.name)||0,target=Math.max(1,Number(goal.target)||1),pct=Math.floor(done/target*100);
+      const tier=pct>=200?"diamond":pct>=100?"gold":"base";
+      const ringPct=Math.min(100,done/target*100);
+      const circumference=2*Math.PI*49,offset=circumference-(circumference*ringPct/100);
+      const card=document.createElement("article");card.className=`monthly-goal-card ${tier}`;
+      card.innerHTML=`<div class="monthly-goal-card-head"><div><strong>${safeText(goal.name)}</strong><small>${target.toLocaleString("tr-TR")} tekrar hedef</small></div><button type="button" class="monthly-goal-delete" aria-label="${safeText(goal.name)} hedefini sil">×</button></div>
+        <div class="goal-ring-wrap"><div class="goal-aura"></div><svg class="goal-ring" viewBox="0 0 120 120" role="img" aria-label="${done} tekrar, yüzde ${pct}"><circle class="goal-ring-track" cx="60" cy="60" r="49"></circle><circle class="goal-ring-progress" cx="60" cy="60" r="49" style="stroke-dasharray:${circumference};stroke-dashoffset:${offset}"></circle></svg><div class="goal-ring-center"><strong>${done.toLocaleString("tr-TR")}</strong><span>TEKRAR</span><b>%${pct.toLocaleString("tr-TR")}</b></div></div>
+        <div class="monthly-goal-foot"><span>${done.toLocaleString("tr-TR")} / ${target.toLocaleString("tr-TR")}</span><span>${pct>=200?"ELMAS SEVİYESİ":pct>=100?"HEDEF TAMAMLANDI":`${Math.max(0,target-done).toLocaleString("tr-TR")} tekrar kaldı`}</span></div>`;
+      card.querySelector(".monthly-goal-delete").addEventListener("click",()=>{monthlyGoals[month]=goals.filter(g=>g.id!==goal.id);saveMonthlyGoals();renderMonthlyGoals();});
+      list.appendChild(card);
+    });
+  }
+  $("monthlyGoalForm")?.addEventListener("submit",event=>{
+    event.preventDefault();const name=$("monthlyGoalExercise").value.trim();const target=Number($("monthlyGoalTarget").value);
+    if(!name||!Number.isFinite(target)||target<1)return;
+    const month=monthlyLeaderboardSelectedMonth||todayISO().slice(0,7);if(!monthlyGoals[month])monthlyGoals[month]=[];
+    const existing=monthlyGoals[month].find(g=>g.name.toLocaleLowerCase("tr")===name.toLocaleLowerCase("tr"));
+    if(existing)existing.target=target;else monthlyGoals[month].push({id:id(),name,target});
+    saveMonthlyGoals();$("monthlyGoalExercise").value="";$("monthlyGoalTarget").value="";renderMonthlyGoals();
+  });
+
   function renderWeek(){
     const names=["Pzt","Sal","Çar","Per","Cum","Cmt","Paz"];
     const d=new Date(selectedDate+"T12:00:00");const dow=(d.getDay()+6)%7;const monday=shiftDate(selectedDate,-dow);
